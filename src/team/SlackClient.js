@@ -1,6 +1,6 @@
-import { SocketModeClient } from '@slack/socket-mode';
-import { WebClient } from '@slack/web-api';
-import { logger } from '../utils/Logger.js';
+import { SocketModeClient } from "@slack/socket-mode";
+import { WebClient } from "@slack/web-api";
+import { logger } from "../utils/Logger.js";
 
 /**
  * SlackClient handles Socket Mode API connection for a single team
@@ -8,17 +8,17 @@ import { logger } from '../utils/Logger.js';
  */
 export class SlackClient {
   constructor(appToken, botToken, teamName, channelIds) {
-    if (!appToken || typeof appToken !== 'string') {
-      throw new Error('App token is required and must be a string');
+    if (!appToken || typeof appToken !== "string") {
+      throw new Error("App token is required and must be a string");
     }
-    if (!botToken || typeof botToken !== 'string') {
-      throw new Error('Bot token is required and must be a string');
+    if (!botToken || typeof botToken !== "string") {
+      throw new Error("Bot token is required and must be a string");
     }
-    if (!teamName || typeof teamName !== 'string') {
-      throw new Error('Team name is required and must be a string');
+    if (!teamName || typeof teamName !== "string") {
+      throw new Error("Team name is required and must be a string");
     }
     if (!Array.isArray(channelIds) || channelIds.length === 0) {
-      throw new Error('Channel IDs must be a non-empty array');
+      throw new Error("Channel IDs must be a non-empty array");
     }
 
     this.appToken = appToken;
@@ -37,6 +37,8 @@ export class SlackClient {
     this.messageCallback = null;
     this.channelNames = new Map(); // Cache channel names
     this.skippedChannels = []; // Track skipped channels with reasons
+    this.processedMessages = new Set(); // Track processed message IDs to prevent duplicates
+    this.connectionTime = null; // Track when we connected to filter out old messages
   }
 
   /**
@@ -44,8 +46,8 @@ export class SlackClient {
    * @param {Function} callback - Function to call when a message is received
    */
   setMessageCallback(callback) {
-    if (typeof callback !== 'function') {
-      throw new Error('Message callback must be a function');
+    if (typeof callback !== "function") {
+      throw new Error("Message callback must be a function");
     }
     this.messageCallback = callback;
   }
@@ -62,8 +64,10 @@ export class SlackClient {
     this.isConnecting = true;
 
     try {
-      // Initialize clients
-      this.socketModeClient = new SocketModeClient(this.appToken);
+      // Initialize clients with explicit options
+      this.socketModeClient = new SocketModeClient({
+        appToken: this.appToken,
+      });
       this.webClient = new WebClient(this.botToken);
 
       // Set up event listeners
@@ -79,8 +83,11 @@ export class SlackClient {
       this.isConnecting = false;
       this.reconnectAttempts = 0;
       this.reconnectDelay = 1000; // Reset delay
+      this.connectionTime = Date.now() / 1000; // Record connection time in Unix timestamp
 
-      logger.info(`Connected to team: ${this.teamName} (${this.channelIds.length} channels)`);
+      logger.info(
+        `Connected to team: ${this.teamName} (${this.channelIds.length} channels)`
+      );
     } catch (error) {
       this.isConnecting = false;
       this.isConnected = false;
@@ -91,7 +98,9 @@ export class SlackClient {
         throw error;
       }
 
-      logger.error(`Team: ${this.teamName}, Error: Failed to connect - ${error.message}`);
+      logger.error(
+        `Team: ${this.teamName}, Error: Failed to connect - ${error.message}`
+      );
 
       // Attempt reconnection for non-auth errors
       this._scheduleReconnect();
@@ -105,7 +114,7 @@ export class SlackClient {
    */
   async subscribeToChannels() {
     if (!this.webClient) {
-      throw new Error('Web client not initialized');
+      throw new Error("Web client not initialized");
     }
 
     const validChannelIds = [];
@@ -115,7 +124,7 @@ export class SlackClient {
     for (const channelId of this.channelIds) {
       // First validate channel ID format
       if (!this.isValidChannelIdFormat(channelId)) {
-        const errorReason = 'invalid channel ID format';
+        const errorReason = "invalid channel ID format";
         logger.warn(`Channel: ${channelId} skipped due to ${errorReason}`);
         this.skippedChannels.push({ channelId, reason: errorReason });
         continue;
@@ -136,8 +145,14 @@ export class SlackClient {
         }
       } catch (error) {
         const errorReason = this._getChannelErrorReasonFromException(error);
-        logger.warn(`Channel: ${channelId} skipped due to ${errorReason} - ${error.message}`);
-        this.skippedChannels.push({ channelId, reason: errorReason, error: error.message });
+        logger.warn(
+          `Channel: ${channelId} skipped due to ${errorReason} - ${error.message}`
+        );
+        this.skippedChannels.push({
+          channelId,
+          reason: errorReason,
+          error: error.message,
+        });
       }
     }
 
@@ -164,48 +179,85 @@ export class SlackClient {
    */
   async handleMessage(event) {
     try {
+      // Socket Mode events have a nested structure: event.event contains the actual message
+      const messageEvent = event.event || event;
+
+      // Only process message events
+      if (messageEvent.type !== "message") {
+        return;
+      }
+
       // Only process messages from subscribed channels
-      if (!this.channelIds.includes(event.channel)) {
+      if (!this.channelIds.includes(messageEvent.channel)) {
         return;
       }
 
       // Skip bot messages and message subtypes we don't want
-      if (event.bot_id || event.subtype) {
+      if (messageEvent.bot_id || messageEvent.subtype) {
         return;
       }
 
+      // Skip messages that are older than our connection time (historical messages)
+      const messageTimestamp = parseFloat(messageEvent.ts);
+      if (this.connectionTime && messageTimestamp < this.connectionTime) {
+        return;
+      }
+
+      // Create a unique message ID to prevent duplicates
+      const messageId = `${messageEvent.channel}-${messageEvent.ts}-${
+        messageEvent.client_msg_id || ""
+      }`;
+
+      // Skip if we've already processed this message
+      if (this.processedMessages.has(messageId)) {
+        return;
+      }
+
+      // Mark this message as processed
+      this.processedMessages.add(messageId);
+
+      // Clean up old message IDs to prevent memory leak (keep last 1000)
+      if (this.processedMessages.size > 1000) {
+        const messagesToDelete = Array.from(this.processedMessages).slice(
+          0,
+          500
+        );
+        messagesToDelete.forEach((id) => this.processedMessages.delete(id));
+      }
+
       // Get user information
-      let userName = 'Unknown User';
-      if (event.user && this.webClient) {
+      let userName = "Unknown User";
+      if (messageEvent.user && this.webClient) {
         try {
           const userResult = await this.webClient.users.info({
-            user: event.user,
+            user: messageEvent.user,
           });
           if (userResult.ok && userResult.user) {
             userName =
               userResult.user.display_name ||
               userResult.user.real_name ||
               userResult.user.name ||
-              'Unknown User';
+              "Unknown User";
           }
         } catch (error) {
           // If we can't get user info, use the user ID
-          userName = event.user;
+          userName = messageEvent.user;
         }
       }
 
       // Get channel name
-      const channelName = this.channelNames.get(event.channel) || event.channel;
+      const channelName =
+        this.channelNames.get(messageEvent.channel) || messageEvent.channel;
 
       // Create message object
       const message = {
         team: this.teamName,
         channel: channelName,
-        channelId: event.channel,
+        channelId: messageEvent.channel,
         user: userName,
-        text: event.text || '',
-        timestamp: event.ts,
-        formattedTime: new Date(Number.parseFloat(event.ts) * 1000),
+        text: messageEvent.text || "",
+        timestamp: messageEvent.ts,
+        formattedTime: new Date(Number.parseFloat(messageEvent.ts) * 1000),
       };
 
       // Call the message callback if set
@@ -213,7 +265,9 @@ export class SlackClient {
         await this.messageCallback(message);
       }
     } catch (error) {
-      logger.error(`Team: ${this.teamName}, Error processing message: ${error.message}`);
+      logger.error(
+        `Team: ${this.teamName}, Error processing message: ${error.message}`
+      );
     }
   }
 
@@ -227,7 +281,9 @@ export class SlackClient {
     }
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error(`Team: ${this.teamName}, Error: Max reconnection attempts reached`);
+      logger.error(
+        `Team: ${this.teamName}, Error: Max reconnection attempts reached`
+      );
       return;
     }
 
@@ -256,13 +312,17 @@ export class SlackClient {
       try {
         await this.socketModeClient.disconnect();
       } catch (error) {
-        logger.warn(`Team: ${this.teamName}, Warning during disconnect: ${error.message}`);
+        logger.warn(
+          `Team: ${this.teamName}, Warning during disconnect: ${error.message}`
+        );
       }
     }
 
     this.socketModeClient = null;
     this.webClient = null;
     this.channelNames.clear();
+    this.processedMessages.clear();
+    this.connectionTime = null;
 
     logger.info(`Disconnected from team: ${this.teamName}`);
   }
@@ -309,17 +369,20 @@ export class SlackClient {
     }
 
     // Handle message events
-    this.socketModeClient.on('message', async (event) => {
-      await this.handleMessage(event);
+    this.socketModeClient.on("message", async (envelope) => {
+      // Socket Mode wraps events in an envelope
+      if (envelope.event && envelope.event.type === "message") {
+        await this.handleMessage(envelope.event);
+      }
     });
 
     // Handle connection events
-    this.socketModeClient.on('connected', () => {
+    this.socketModeClient.on("connected", () => {
       this.isConnected = true;
       this.reconnectAttempts = 0;
     });
 
-    this.socketModeClient.on('disconnected', () => {
+    this.socketModeClient.on("disconnected", () => {
       this.isConnected = false;
       if (!this.isConnecting) {
         logger.warn(`Team: ${this.teamName}, Connection lost`);
@@ -328,7 +391,7 @@ export class SlackClient {
     });
 
     // Handle errors
-    this.socketModeClient.on('error', (error) => {
+    this.socketModeClient.on("error", (error) => {
       logger.error(`Team: ${this.teamName}, Socket error: ${error.message}`);
       this.isConnected = false;
 
@@ -349,9 +412,14 @@ export class SlackClient {
    * @private
    */
   _scheduleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts || this.isInvalidated) {
+    if (
+      this.reconnectAttempts >= this.maxReconnectAttempts ||
+      this.isInvalidated
+    ) {
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        logger.error(`Team: ${this.teamName}, Error: Max reconnection attempts reached`);
+        logger.error(
+          `Team: ${this.teamName}, Error: Max reconnection attempts reached`
+        );
       }
       return;
     }
@@ -375,31 +443,37 @@ export class SlackClient {
   _isAuthenticationError(error) {
     if (!error) return false;
 
-    const errorMessage = error.message?.toLowerCase() || '';
+    const errorMessage = error.message?.toLowerCase() || "";
     const errorCode = error.code;
 
     // Common authentication error patterns
     const authErrorPatterns = [
-      'invalid_auth',
-      'token_revoked',
-      'account_inactive',
-      'invalid_token',
-      'not_authed',
-      'token_expired',
-      'unauthorized',
-      'authentication failed',
-      'invalid credentials',
+      "invalid_auth",
+      "token_revoked",
+      "account_inactive",
+      "invalid_token",
+      "not_authed",
+      "token_expired",
+      "unauthorized",
+      "authentication failed",
+      "invalid credentials",
     ];
 
     // Check error message for auth patterns
-    const hasAuthPattern = authErrorPatterns.some((pattern) => errorMessage.includes(pattern));
+    const hasAuthPattern = authErrorPatterns.some((pattern) =>
+      errorMessage.includes(pattern)
+    );
 
     // Check for specific error codes
-    const authErrorCodes = ['invalid_auth', 'token_revoked', 'account_inactive'];
+    const authErrorCodes = [
+      "invalid_auth",
+      "token_revoked",
+      "account_inactive",
+    ];
     const hasAuthCode = authErrorCodes.includes(errorCode);
 
     // Check for HTTP 401 Unauthorized
-    const isUnauthorized = error.status === 401 || errorMessage.includes('401');
+    const isUnauthorized = error.status === 401 || errorMessage.includes("401");
 
     return hasAuthPattern || hasAuthCode || isUnauthorized;
   }
@@ -414,8 +488,12 @@ export class SlackClient {
     this.isConnected = false;
     this.isConnecting = false;
 
-    logger.error(`Team: ${this.teamName}, Error: Authentication failed - ${error.message}`);
-    logger.error(`Team: ${this.teamName} has been invalidated and will not attempt reconnection`);
+    logger.error(
+      `Team: ${this.teamName}, Error: Authentication failed - ${error.message}`
+    );
+    logger.error(
+      `Team: ${this.teamName} has been invalidated and will not attempt reconnection`
+    );
 
     // Clean up connections
     if (this.socketModeClient) {
@@ -443,19 +521,19 @@ export class SlackClient {
   _getChannelErrorReason(result) {
     if (!result.ok) {
       switch (result.error) {
-        case 'channel_not_found':
-          return 'channel not found';
-        case 'not_in_channel':
-          return 'bot not in channel';
-        case 'access_denied':
-          return 'access denied';
-        case 'invalid_channel':
-          return 'invalid channel ID';
+        case "channel_not_found":
+          return "channel not found";
+        case "not_in_channel":
+          return "bot not in channel";
+        case "access_denied":
+          return "access denied";
+        case "invalid_channel":
+          return "invalid channel ID";
         default:
           return `API error: ${result.error}`;
       }
     }
-    return 'unknown error';
+    return "unknown error";
   }
 
   /**
@@ -465,38 +543,53 @@ export class SlackClient {
    * @returns {string} Human-readable error reason
    */
   _getChannelErrorReasonFromException(error) {
-    if (!error) return 'unknown error';
+    if (!error) return "unknown error";
 
-    const errorMessage = error.message?.toLowerCase() || '';
+    const errorMessage = error.message?.toLowerCase() || "";
     const errorCode = error.code;
 
     // Check for specific error patterns
-    if (errorMessage.includes('channel_not_found') || errorCode === 'channel_not_found') {
-      return 'channel not found';
+    if (
+      errorMessage.includes("channel_not_found") ||
+      errorCode === "channel_not_found"
+    ) {
+      return "channel not found";
     }
-    if (errorMessage.includes('not_in_channel') || errorCode === 'not_in_channel') {
-      return 'bot not in channel';
+    if (
+      errorMessage.includes("not_in_channel") ||
+      errorCode === "not_in_channel"
+    ) {
+      return "bot not in channel";
     }
-    if (errorMessage.includes('access_denied') || errorCode === 'access_denied') {
-      return 'access denied';
+    if (
+      errorMessage.includes("access_denied") ||
+      errorCode === "access_denied"
+    ) {
+      return "access denied";
     }
-    if (errorMessage.includes('invalid_channel') || errorCode === 'invalid_channel') {
-      return 'invalid channel ID';
+    if (
+      errorMessage.includes("invalid_channel") ||
+      errorCode === "invalid_channel"
+    ) {
+      return "invalid channel ID";
     }
-    if (errorMessage.includes('rate_limited') || errorCode === 'rate_limited') {
-      return 'rate limited';
+    if (errorMessage.includes("rate_limited") || errorCode === "rate_limited") {
+      return "rate limited";
     }
-    if (errorMessage.includes('timeout') || errorMessage.includes('econnreset')) {
-      return 'network timeout';
+    if (
+      errorMessage.includes("timeout") ||
+      errorMessage.includes("econnreset")
+    ) {
+      return "network timeout";
     }
     if (error.status === 403) {
-      return 'permission denied';
+      return "permission denied";
     }
     if (error.status === 404) {
-      return 'channel not found';
+      return "channel not found";
     }
 
-    return 'access error';
+    return "access error";
   }
 
   /**
@@ -505,7 +598,7 @@ export class SlackClient {
    * @returns {boolean} True if channel ID format is valid
    */
   isValidChannelIdFormat(channelId) {
-    if (!channelId || typeof channelId !== 'string') {
+    if (!channelId || typeof channelId !== "string") {
       return false;
     }
     // Slack channel ID format: C followed by 10 alphanumeric characters
