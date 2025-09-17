@@ -648,7 +648,9 @@ describe('ConfigurationManager', () => {
     });
   });
 
-  describe('Highlight Configuration', () => {
+
+
+  describe('Highlight Configuration Tests', () => {
     describe('validateHighlightConfig', () => {
       it('should validate successfully when highlight section is missing', () => {
         configManager.config = {
@@ -746,12 +748,12 @@ describe('ConfigurationManager', () => {
             },
           },
           highlight: {
-            keywords: ['/php/i', 'invalid-regex'],
+            keywords: ['/php/i', '/[/i'],
           },
         };
 
         expect(() => configManager.validateConfig()).toThrow(
-          'Invalid regex pattern in highlight.keywords[1]: invalid-regex'
+          'Invalid regex pattern in highlight.keywords[1]: /[/i'
         );
       });
 
@@ -770,6 +772,25 @@ describe('ConfigurationManager', () => {
         };
 
         expect(() => configManager.validateConfig()).not.toThrow();
+      });
+
+      it('should throw error for malformed regex patterns', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/php/i', 'not-a-regex-format'],
+          },
+        };
+
+        expect(() => configManager.validateConfig()).toThrow(
+          'Invalid regex pattern in highlight.keywords[1]: not-a-regex-format'
+        );
       });
     });
 
@@ -848,6 +869,95 @@ describe('ConfigurationManager', () => {
         expect(highlightConfig.matchesAny('This is a PHP message')).toBe(true);
         expect(highlightConfig.matchesAny('Hello uzulla!')).toBe(true);
         expect(highlightConfig.matchesAny('No match here')).toBe(false);
+      });
+
+      it('should return HighlightConfig with empty array when keywords is null', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: null,
+          },
+        };
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.getKeywords()).toEqual([]);
+      });
+    });
+
+    describe('highlight configuration loading integration', () => {
+      it('should load and validate highlight configuration from file', () => {
+        const validConfig = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/error/i', '/warning/gi', '/(uzulla|uzura)/i'],
+          },
+        };
+
+        mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
+
+        const result = configManager.loadConfig();
+        expect(result).toEqual(validConfig);
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.getKeywords()).toEqual(['/error/i', '/warning/gi', '/(uzulla|uzura)/i']);
+        expect(highlightConfig.matchesAny('This is an ERROR message')).toBe(true);
+        expect(highlightConfig.matchesAny('WARNING: something happened')).toBe(true);
+        expect(highlightConfig.matchesAny('Hello uzulla!')).toBe(true);
+        expect(highlightConfig.matchesAny('Normal message')).toBe(false);
+      });
+
+      it('should handle configuration with no highlight section', () => {
+        const validConfig = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+        };
+
+        mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
+
+        const result = configManager.loadConfig();
+        expect(result).toEqual(validConfig);
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.getKeywords()).toEqual([]);
+        expect(highlightConfig.matchesAny('Any message')).toBe(false);
+      });
+
+      it('should fail validation with invalid highlight configuration', () => {
+        const invalidConfig = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/valid/i', 'invalid-regex-format'],
+          },
+        };
+
+        mockReadFileSync.mockReturnValue(JSON.stringify(invalidConfig));
+
+        expect(() => configManager.loadConfig()).toThrow(
+          'Invalid regex pattern in highlight.keywords[1]: invalid-regex-format'
+        );
       });
     });
   });
