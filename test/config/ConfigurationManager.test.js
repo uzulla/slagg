@@ -648,6 +648,210 @@ describe('ConfigurationManager', () => {
     });
   });
 
+  describe('Highlight Configuration', () => {
+    describe('validateHighlightConfig', () => {
+      it('should validate successfully when highlight section is missing', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+        };
+
+        expect(() => configManager.validateConfig()).not.toThrow();
+      });
+
+      it('should validate successfully with valid highlight configuration', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/php/i', '/(uzulla|uzura)/i'],
+          },
+        };
+
+        expect(() => configManager.validateConfig()).not.toThrow();
+      });
+
+      it('should throw error when highlight section is not an object', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: 'invalid',
+        };
+
+        expect(() => configManager.validateConfig()).toThrow(
+          'Configuration "highlight" must be an object'
+        );
+      });
+
+      it('should throw error when keywords is not an array', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: 'invalid',
+          },
+        };
+
+        expect(() => configManager.validateConfig()).toThrow(
+          'Configuration "highlight.keywords" must be an array'
+        );
+      });
+
+      it('should throw error when keyword is not a string', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/php/i', 123],
+          },
+        };
+
+        expect(() => configManager.validateConfig()).toThrow(
+          'Configuration "highlight.keywords[1]" must be a string'
+        );
+      });
+
+      it('should throw error when keyword has invalid regex format', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/php/i', 'invalid-regex'],
+          },
+        };
+
+        expect(() => configManager.validateConfig()).toThrow(
+          'Invalid regex pattern in highlight.keywords[1]: invalid-regex'
+        );
+      });
+
+      it('should validate successfully with empty keywords array', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: [],
+          },
+        };
+
+        expect(() => configManager.validateConfig()).not.toThrow();
+      });
+    });
+
+    describe('getHighlightConfig', () => {
+      it('should throw error when configuration is not loaded', () => {
+        expect(() => configManager.getHighlightConfig()).toThrow(
+          'Configuration not loaded. Call loadConfig() first.'
+        );
+      });
+
+      it('should return empty HighlightConfig when highlight section is missing', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+        };
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.getKeywords()).toEqual([]);
+      });
+
+      it('should return empty HighlightConfig when keywords is missing', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {},
+        };
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.getKeywords()).toEqual([]);
+      });
+
+      it('should return HighlightConfig with configured keywords', () => {
+        const keywords = ['/php/i', '/(uzulla|uzura)/i'];
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords,
+          },
+        };
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.getKeywords()).toEqual(keywords);
+      });
+
+      it('should return HighlightConfig that can match text', () => {
+        configManager.config = {
+          teams: {
+            mycompany: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxb-123456789-ABC',
+              channels: ['C1234567890'],
+            },
+          },
+          highlight: {
+            keywords: ['/php/i', '/(uzulla|uzura)/i'],
+          },
+        };
+
+        const highlightConfig = configManager.getHighlightConfig();
+        expect(highlightConfig.matchesAny('This is a PHP message')).toBe(true);
+        expect(highlightConfig.matchesAny('Hello uzulla!')).toBe(true);
+        expect(highlightConfig.matchesAny('No match here')).toBe(false);
+      });
+    });
+  });
+
   describe('Error Handling Scenarios', () => {
     describe('Invalid Token Detection', () => {
       it('should detect and log missing appToken', () => {

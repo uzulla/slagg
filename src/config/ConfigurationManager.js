@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { logger } from '../utils/Logger.js';
+import HighlightConfig from './HighlightConfig.js';
 
 /**
  * Configuration Manager for Slack Aggregator CLI
@@ -66,6 +67,11 @@ export class ConfigurationManager {
     // Validate handlers section (optional)
     if (this.config.handlers && typeof this.config.handlers !== 'object') {
       throw new Error('Configuration "handlers" must be an object');
+    }
+
+    // Validate highlight section (optional)
+    if (this.config.highlight) {
+      this.validateHighlightConfig();
     }
   }
 
@@ -266,6 +272,57 @@ export class ConfigurationManager {
     }
 
     return validTeams;
+  }
+
+  /**
+   * Validate highlight configuration section
+   * @throws {Error} If highlight configuration is invalid
+   */
+  validateHighlightConfig() {
+    if (!this.config.highlight || typeof this.config.highlight !== 'object') {
+      throw new Error('Configuration "highlight" must be an object');
+    }
+
+    if (this.config.highlight.keywords !== undefined) {
+      if (!Array.isArray(this.config.highlight.keywords)) {
+        throw new Error('Configuration "highlight.keywords" must be an array');
+      }
+
+      // Validate each keyword is a string
+      for (let i = 0; i < this.config.highlight.keywords.length; i++) {
+        const keyword = this.config.highlight.keywords[i];
+        if (typeof keyword !== 'string') {
+          throw new Error(`Configuration "highlight.keywords[${i}]" must be a string`);
+        }
+
+        // Try to parse the regex to validate format
+        try {
+          const highlightConfig = new HighlightConfig();
+          highlightConfig.parseRegexString(keyword);
+        } catch (error) {
+          throw new Error(
+            `Invalid regex pattern in highlight.keywords[${i}]: ${keyword} - ${error.message}`
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Get highlight configuration as HighlightConfig instance
+   * @returns {HighlightConfig} HighlightConfig instance with configured keywords
+   */
+  getHighlightConfig() {
+    if (!this.config) {
+      throw new Error('Configuration not loaded. Call loadConfig() first.');
+    }
+
+    // Return empty HighlightConfig if highlight section doesn't exist
+    if (!this.config.highlight || !this.config.highlight.keywords) {
+      return new HighlightConfig([]);
+    }
+
+    return new HighlightConfig(this.config.highlight.keywords);
   }
 
   /**
