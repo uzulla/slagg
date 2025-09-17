@@ -70,3 +70,8 @@
   - テスト、Linter、BiomeCheck、Formatを実行
   - 適切なコミットメッセージでコミット
   - _要件: 2.2, 2.5_
+
+- [x] READMEとMANUAL_QA.mdの更新
+  - 実装した内容にあわせて、ドキュメントを更新してください
+  - .env.json.exampleも更新してサンプルを追加してください
+  
