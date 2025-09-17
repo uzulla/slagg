@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { logger } from '../utils/Logger.js';
 
 /**
  * Configuration Manager for Slack Aggregator CLI
@@ -24,12 +25,18 @@ export class ConfigurationManager {
       return this.config;
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error(`Configuration file ${this.configPath} not found`);
+        const errorMessage = `Configuration file ${this.configPath} not found`;
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
       if (error instanceof SyntaxError) {
-        throw new Error(`Invalid JSON in configuration file: ${error.message}`);
+        const errorMessage = `Invalid JSON in configuration file: ${error.message}`;
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
-      throw new Error(`Failed to load configuration: ${error.message}`);
+      const errorMessage = `Failed to load configuration: ${error.message}`;
+      logger.error(errorMessage);
+      throw new Error(errorMessage);
     }
   }
 
@@ -71,34 +78,44 @@ export class ConfigurationManager {
    */
   validateTeamConfig(teamName, teamConfig) {
     if (!teamConfig || typeof teamConfig !== 'object') {
-      throw new Error(`Team "${teamName}" configuration must be an object`);
+      const errorMessage = `Team "${teamName}" configuration must be an object`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     // Validate token
     if (!teamConfig.token || typeof teamConfig.token !== 'string') {
-      throw new Error(`Team "${teamName}" must have a valid token string`);
+      const errorMessage = `Team "${teamName}" must have a valid token string`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     // Validate token format (Slack App-Level Token format)
     if (!this.isValidSlackToken(teamConfig.token)) {
-      throw new Error(`Team "${teamName}" has invalid token format. Expected format: xapp-1-xxxxx`);
+      const errorMessage = `Team "${teamName}" has invalid token format. Expected format: xapp-1-xxxxx`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     // Validate channels
     if (!teamConfig.channels || !Array.isArray(teamConfig.channels)) {
-      throw new Error(`Team "${teamName}" must have a "channels" array`);
+      const errorMessage = `Team "${teamName}" must have a "channels" array`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     if (teamConfig.channels.length === 0) {
-      throw new Error(`Team "${teamName}" must have at least one channel configured`);
+      const errorMessage = `Team "${teamName}" must have at least one channel configured`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     // Validate channel ID format
     for (const channelId of teamConfig.channels) {
       if (!this.isValidChannelId(channelId)) {
-        throw new Error(
-          `Team "${teamName}" has invalid channel ID: ${channelId}. Expected format: C followed by 10 characters`
-        );
+        const errorMessage = `Team "${teamName}" has invalid channel ID: ${channelId}. Expected format: C followed by 10 characters`;
+        logger.error(`Configuration error: ${errorMessage}`);
+        throw new Error(errorMessage);
       }
     }
   }
@@ -182,5 +199,67 @@ export class ConfigurationManager {
     }
 
     return teamConfig.token;
+  }
+
+  /**
+   * Validate teams and filter out invalid ones
+   * @returns {Object} Object containing only valid team configurations
+   */
+  getValidTeamConfigs() {
+    if (!this.config) {
+      throw new Error('Configuration not loaded. Call loadConfig() first.');
+    }
+
+    const validTeams = {};
+    const teamConfigs = this.config.teams;
+
+    for (const [teamName, teamConfig] of Object.entries(teamConfigs)) {
+      try {
+        this.validateTeamConfig(teamName, teamConfig);
+        validTeams[teamName] = teamConfig;
+      } catch (error) {
+        logger.error(`Team "${teamName}" skipped due to configuration error: ${error.message}`);
+        // Continue processing other teams instead of throwing
+      }
+    }
+
+    if (Object.keys(validTeams).length === 0) {
+      const errorMessage = 'No valid team configurations found';
+      logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    return validTeams;
+  }
+
+  /**
+   * Check if configuration file exists
+   * @returns {boolean} True if configuration file exists
+   */
+  configFileExists() {
+    try {
+      readFileSync(this.configPath, 'utf8');
+      return true;
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return false;
+      }
+      // For other errors (permissions, etc.), we still consider the file as "existing"
+      // but with access issues that will be handled in loadConfig()
+      return true;
+    }
+  }
+
+  /**
+   * Load configuration with graceful error handling
+   * @returns {Object|null} Loaded configuration object or null if failed
+   */
+  loadConfigSafely() {
+    try {
+      return this.loadConfig();
+    } catch (error) {
+      // Error already logged in loadConfig()
+      return null;
+    }
   }
 }

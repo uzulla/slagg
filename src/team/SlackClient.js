@@ -25,12 +25,14 @@ export class SlackClient {
     this.webClient = null;
     this.isConnected = false;
     this.isConnecting = false;
+    this.isInvalidated = false; // Track if team has been invalidated due to auth errors
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000; // Start with 1 second
     this.maxReconnectDelay = 30000; // Max 30 seconds
     this.messageCallback = null;
     this.channelNames = new Map(); // Cache channel names
+    this.skippedChannels = []; // Track skipped channels with reasons
   }
 
   /**
@@ -49,7 +51,7 @@ export class SlackClient {
    * @returns {Promise<void>}
    */
   async connect() {
-    if (this.isConnecting || this.isConnected) {
+    if (this.isConnecting || this.isConnected || this.isInvalidated) {
       return;
     }
 
@@ -78,9 +80,16 @@ export class SlackClient {
     } catch (error) {
       this.isConnecting = false;
       this.isConnected = false;
+
+      // Check if this is an authentication error
+      if (this._isAuthenticationError(error)) {
+        this._invalidateTeam(error);
+        throw error;
+      }
+
       logger.error(`Team: ${this.teamName}, Error: Failed to connect - ${error.message}`);
 
-      // Attempt reconnection
+      // Attempt reconnection for non-auth errors
       this._scheduleReconnect();
       throw error;
     }
@@ -96,9 +105,18 @@ export class SlackClient {
     }
 
     const validChannelIds = [];
+    this.skippedChannels = []; // Reset skipped channels list
 
     // Fetch channel names for better message formatting
     for (const channelId of this.channelIds) {
+      // First validate channel ID format
+      if (!this.isValidChannelIdFormat(channelId)) {
+        const errorReason = 'invalid channel ID format';
+        logger.warn(`Channel: ${channelId} skipped due to ${errorReason}`);
+        this.skippedChannels.push({ channelId, reason: errorReason });
+        continue;
+      }
+
       try {
         const result = await this.webClient.conversations.info({
           channel: channelId,
@@ -108,15 +126,28 @@ export class SlackClient {
           this.channelNames.set(channelId, result.channel.name);
           validChannelIds.push(channelId);
         } else {
-          logger.warn(`Channel: ${channelId} skipped due to access error`);
+          const errorReason = this._getChannelErrorReason(result);
+          logger.warn(`Channel: ${channelId} skipped due to ${errorReason}`);
+          this.skippedChannels.push({ channelId, reason: errorReason });
         }
       } catch (error) {
-        logger.warn(`Channel: ${channelId} skipped due to access error - ${error.message}`);
+        const errorReason = this._getChannelErrorReasonFromException(error);
+        logger.warn(`Channel: ${channelId} skipped due to ${errorReason} - ${error.message}`);
+        this.skippedChannels.push({ channelId, reason: errorReason, error: error.message });
       }
     }
 
     if (validChannelIds.length === 0) {
-      throw new Error('No valid channels available for subscription');
+      const errorMessage = `No valid channels available for subscription. Skipped ${this.skippedChannels.length} channels.`;
+      logger.error(`Team: ${this.teamName}, Error: ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
+
+    // Log summary of channel subscription results
+    if (this.skippedChannels.length > 0) {
+      logger.info(
+        `Team: ${this.teamName}, Successfully subscribed to ${validChannelIds.length} channels, skipped ${this.skippedChannels.length} channels`
+      );
     }
 
     // Update the channel IDs list with only valid channels
@@ -187,7 +218,7 @@ export class SlackClient {
    * @returns {Promise<void>}
    */
   async reconnect() {
-    if (this.isConnecting || this.isConnected) {
+    if (this.isConnecting || this.isConnected || this.isInvalidated) {
       return;
     }
 
@@ -205,6 +236,7 @@ export class SlackClient {
       await this.connect();
     } catch (error) {
       // connect() method already handles scheduling the next reconnect
+      // or invalidates the team for auth errors
     }
   }
 
@@ -237,6 +269,14 @@ export class SlackClient {
    */
   isClientConnected() {
     return this.isConnected;
+  }
+
+  /**
+   * Check if the team has been invalidated due to authentication errors
+   * @returns {boolean}
+   */
+  isTeamInvalidated() {
+    return this.isInvalidated;
   }
 
   /**
@@ -287,6 +327,13 @@ export class SlackClient {
     this.socketModeClient.on('error', (error) => {
       logger.error(`Team: ${this.teamName}, Socket error: ${error.message}`);
       this.isConnected = false;
+
+      // Check if this is an authentication error
+      if (this._isAuthenticationError(error)) {
+        this._invalidateTeam(error);
+        return;
+      }
+
       if (!this.isConnecting) {
         this._scheduleReconnect();
       }
@@ -298,8 +345,10 @@ export class SlackClient {
    * @private
    */
   _scheduleReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error(`Team: ${this.teamName}, Error: Max reconnection attempts reached`);
+    if (this.reconnectAttempts >= this.maxReconnectAttempts || this.isInvalidated) {
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        logger.error(`Team: ${this.teamName}, Error: Max reconnection attempts reached`);
+      }
       return;
     }
 
@@ -311,5 +360,159 @@ export class SlackClient {
     setTimeout(() => {
       this.reconnect();
     }, delay);
+  }
+
+  /**
+   * Check if an error is an authentication error
+   * @private
+   * @param {Error} error - The error to check
+   * @returns {boolean} True if the error is an authentication error
+   */
+  _isAuthenticationError(error) {
+    if (!error) return false;
+
+    const errorMessage = error.message?.toLowerCase() || '';
+    const errorCode = error.code;
+
+    // Common authentication error patterns
+    const authErrorPatterns = [
+      'invalid_auth',
+      'token_revoked',
+      'account_inactive',
+      'invalid_token',
+      'not_authed',
+      'token_expired',
+      'unauthorized',
+      'authentication failed',
+      'invalid credentials',
+    ];
+
+    // Check error message for auth patterns
+    const hasAuthPattern = authErrorPatterns.some((pattern) => errorMessage.includes(pattern));
+
+    // Check for specific error codes
+    const authErrorCodes = ['invalid_auth', 'token_revoked', 'account_inactive'];
+    const hasAuthCode = authErrorCodes.includes(errorCode);
+
+    // Check for HTTP 401 Unauthorized
+    const isUnauthorized = error.status === 401 || errorMessage.includes('401');
+
+    return hasAuthPattern || hasAuthCode || isUnauthorized;
+  }
+
+  /**
+   * Invalidate the team due to authentication errors
+   * @private
+   * @param {Error} error - The authentication error
+   */
+  _invalidateTeam(error) {
+    this.isInvalidated = true;
+    this.isConnected = false;
+    this.isConnecting = false;
+
+    logger.error(`Team: ${this.teamName}, Error: Authentication failed - ${error.message}`);
+    logger.error(`Team: ${this.teamName} has been invalidated and will not attempt reconnection`);
+
+    // Clean up connections
+    if (this.socketModeClient) {
+      try {
+        // Don't await the disconnect to avoid blocking invalidation
+        this.socketModeClient.disconnect().catch(() => {
+          // Ignore disconnect errors during invalidation
+        });
+      } catch (disconnectError) {
+        // Ignore disconnect errors during invalidation
+      }
+    }
+
+    this.socketModeClient = null;
+    this.webClient = null;
+    this.channelNames.clear();
+  }
+
+  /**
+   * Determine the reason for channel error from API response
+   * @private
+   * @param {Object} result - The API response result
+   * @returns {string} Human-readable error reason
+   */
+  _getChannelErrorReason(result) {
+    if (!result.ok) {
+      switch (result.error) {
+        case 'channel_not_found':
+          return 'channel not found';
+        case 'not_in_channel':
+          return 'bot not in channel';
+        case 'access_denied':
+          return 'access denied';
+        case 'invalid_channel':
+          return 'invalid channel ID';
+        default:
+          return `API error: ${result.error}`;
+      }
+    }
+    return 'unknown error';
+  }
+
+  /**
+   * Determine the reason for channel error from exception
+   * @private
+   * @param {Error} error - The exception thrown
+   * @returns {string} Human-readable error reason
+   */
+  _getChannelErrorReasonFromException(error) {
+    if (!error) return 'unknown error';
+
+    const errorMessage = error.message?.toLowerCase() || '';
+    const errorCode = error.code;
+
+    // Check for specific error patterns
+    if (errorMessage.includes('channel_not_found') || errorCode === 'channel_not_found') {
+      return 'channel not found';
+    }
+    if (errorMessage.includes('not_in_channel') || errorCode === 'not_in_channel') {
+      return 'bot not in channel';
+    }
+    if (errorMessage.includes('access_denied') || errorCode === 'access_denied') {
+      return 'access denied';
+    }
+    if (errorMessage.includes('invalid_channel') || errorCode === 'invalid_channel') {
+      return 'invalid channel ID';
+    }
+    if (errorMessage.includes('rate_limited') || errorCode === 'rate_limited') {
+      return 'rate limited';
+    }
+    if (errorMessage.includes('timeout') || errorMessage.includes('econnreset')) {
+      return 'network timeout';
+    }
+    if (error.status === 403) {
+      return 'permission denied';
+    }
+    if (error.status === 404) {
+      return 'channel not found';
+    }
+
+    return 'access error';
+  }
+
+  /**
+   * Validate channel ID format
+   * @param {string} channelId - Channel ID to validate
+   * @returns {boolean} True if channel ID format is valid
+   */
+  isValidChannelIdFormat(channelId) {
+    if (!channelId || typeof channelId !== 'string') {
+      return false;
+    }
+    // Slack channel ID format: C followed by 10 alphanumeric characters
+    return /^C[A-Z0-9]{10}$/.test(channelId);
+  }
+
+  /**
+   * Get list of skipped channels with reasons
+   * @returns {Array} Array of skipped channel information
+   */
+  getSkippedChannels() {
+    return this.skippedChannels || [];
   }
 }
