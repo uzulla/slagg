@@ -34,14 +34,14 @@
     - Loggerクラスの単体テストを作成（出力先とフォーマット検証）
     - _要件: 6.1, 6.2, 7.4_
 
-- [ ] 4. メッセージハンドラーシステムの実装
-  - [ ] 4.1 MessageHandlerインターフェースの実装
+- [x] 4. メッセージハンドラーシステムの実装
+  - [x] 4.1 MessageHandlerインターフェースの実装
     - 抽象基底クラスとしてMessageHandlerを実装
     - handle、getName、isEnabledメソッドを定義
     - MessageHandlerの単体テストを作成（インターフェース検証）
     - _要件: 5.2, 5.4_
 
-  - [ ] 4.2 ConsoleOutputHandlerの実装
+  - [x] 4.2 ConsoleOutputHandlerの実装
     - MessageHandlerを継承してConsoleOutputHandlerを実装
     - 「{team}/{channel}/{ユーザー} > 発言」形式での出力機能を実装
     - 改行の空白置換とテキストサニタイズ機能を実装
@@ -49,7 +49,7 @@
     - ConsoleOutputHandlerの単体テストを作成（フォーマット・サニタイズ検証）
     - _要件: 4.2, 7.1, 7.2, 7.5_
 
-  - [ ] 4.3 MessageProcessorクラスの実装
+  - [x] 4.3 MessageProcessorクラスの実装
     - ハンドラー登録・削除機能を実装
     - メッセージ処理とハンドラー実行機能を実装
     - タイムスタンプによるメッセージソート機能を実装
