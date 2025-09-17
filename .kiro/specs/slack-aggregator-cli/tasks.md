@@ -118,14 +118,14 @@
     - 無効なチャンネルIDでの動作確認
     - _要件: 1.3, 2.3, 3.3, 3.4_
 
-- [ ] 9. 将来拡張用ハンドラーの骨格実装
-  - [ ] 9.1 NotificationHandlerの骨格実装
+- [x] 9. 将来拡張用ハンドラーの骨格実装
+  - [x] 9.1 NotificationHandlerの骨格実装
     - MessageHandlerを継承した基本構造を実装
     - 将来の通知機能のためのプレースホルダーを作成
     - NotificationHandlerの単体テストを作成（基本構造検証）
     - _要件: 5.2_
 
-  - [ ] 9.2 SpeechHandlerの骨格実装
+  - [x] 9.2 SpeechHandlerの骨格実装
     - MessageHandlerを継承した基本構造を実装
     - 将来の読み上げ機能のためのプレースホルダーを作成
     - SpeechHandlerの単体テストを作成（基本構造検証）
