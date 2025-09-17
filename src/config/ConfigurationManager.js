@@ -6,9 +6,9 @@ import { logger } from '../utils/Logger.js';
  * Handles loading and validation of .env.json configuration file
  */
 export class ConfigurationManager {
-  constructor() {
+  constructor(configPath = '.env.json') {
     this.config = null;
-    this.configPath = '.env.json';
+    this.configPath = configPath;
   }
 
   /**
@@ -295,6 +295,7 @@ export class ConfigurationManager {
       return this.loadConfig();
     } catch (error) {
       // Error already logged in loadConfig()
+      logger.error(`Failed to load configuration safely: ${error.message}`);
       return null;
     }
   }
