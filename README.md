@@ -12,6 +12,7 @@ Slagg is a Node.js CLI application that connects to multiple Slack teams simulta
 - **Real-time streaming**: Uses Slack Socket Mode API for instant message delivery
 - **Channel-specific monitoring**: Configure specific channels to monitor for each team
 - **Unified timeline**: Messages from all teams are displayed in chronological order
+- **Message highlighting**: Highlight messages containing specific keywords with red bold text
 - **Clean output format**: Structured output suitable for piping to other tools
 - **Automatic reconnection**: Handles connection failures with automatic retry
 - **Modular architecture**: Extensible design for future features
@@ -73,6 +74,13 @@ Edit `.env.json` with your team configurations:
       "enabled": false,
       "command": "say"
     }
+  },
+  "highlight": {
+    "keywords": [
+      "/(urgent|emergency)/i",
+      "/error/i",
+      "/@channel/i"
+    ]
   }
 }
 ```
@@ -88,6 +96,8 @@ Edit `.env.json` with your team configurations:
   - **console**: Console output handler (always enabled)
   - **notification**: Desktop notifications (future feature)
   - **speech**: Text-to-speech (future feature)
+- **highlight**: Message highlighting configuration (optional)
+  - **keywords**: Array of regular expression patterns in "/pattern/flags" format
 
 ### Getting Slack Tokens and Channel IDs
 
@@ -104,6 +114,47 @@ Edit `.env.json` with your team configurations:
    - `mpim:history`
 4. **Install to Workspace**: Install the app to your Slack workspace and get the Bot User OAuth Token (`xoxb-...`)
 5. **Get Channel IDs**: Right-click on channels in Slack and copy the channel ID from the URL
+
+### Message Highlighting
+
+Slagg supports highlighting messages that match specific keywords using regular expressions. Messages containing matching keywords are displayed in red bold text for better visibility.
+
+#### Configuration
+
+Add a `highlight` section to your `.env.json` file:
+
+```json
+{
+  "highlight": {
+    "keywords": [
+      "/(urgent|emergency)/i",
+      "/error/i",
+      "/@channel/i",
+      "/production/i"
+    ]
+  }
+}
+```
+
+#### Keyword Format
+
+Keywords must be specified as regular expression strings in the format `"/pattern/flags"`:
+
+- **Pattern**: The regular expression pattern to match
+- **Flags**: Optional regex flags (i = case insensitive, g = global, etc.)
+
+**Examples:**
+- `"/error/i"` - Matches "error", "Error", "ERROR" (case insensitive)
+- `"/(urgent|emergency)/i"` - Matches "urgent" or "emergency" (case insensitive)
+- `"/@channel/"` - Matches "@channel" mentions
+- `"/\\b(bug|issue)\\b/i"` - Matches whole words "bug" or "issue"
+
+#### Behavior
+
+- Messages matching any keyword are displayed in red bold text
+- If no `highlight` section is configured, all messages display normally
+- Invalid regular expressions are logged as errors and skipped
+- Highlighting works with all message types and channels
 
 ## Usage
 

@@ -114,6 +114,14 @@ curl -H "Authorization: Bearer xoxb-your-bot-token" \
       "enabled": false,
       "command": "say"
     }
+  },
+  "highlight": {
+    "keywords": [
+      "/(urgent|emergency)/i",
+      "/error/i",
+      "/@channel/i",
+      "/test/i"
+    ]
   }
 }
 ```
@@ -279,7 +287,105 @@ test-team-1/general/testuser > Line 1 Line 2 Line 3
 [INFO] All connections closed.
 ```
 
-### 5.7 パイプ・リダイレクトテスト
+### 5.7 ハイライト機能テスト
+
+#### 5.7.1 キーワードマッチングテスト
+
+**作業内容**: 設定したキーワードを含むメッセージを投稿する
+
+**実行手順**:
+1. 設定ファイルに以下のキーワードが設定されていることを確認：
+   ```json
+   "highlight": {
+     "keywords": [
+       "/(urgent|emergency)/i",
+       "/error/i",
+       "/@channel/i",
+       "/test/i"
+     ]
+   }
+   ```
+2. Slackで以下のメッセージを順番に投稿：
+   - "This is an urgent message"
+   - "Error occurred in the system"
+   - "@channel please check this"
+   - "This is a test message"
+   - "Normal message without keywords"
+
+**期待結果**:
+- キーワードを含むメッセージが赤太文字で表示される
+- 通常のメッセージは通常の色で表示される
+- 大文字小文字の違いは無視される（"URGENT"、"Error"なども赤太文字）
+
+#### 5.7.2 複数キーワードマッチテスト
+
+**作業内容**: 複数のキーワードを含むメッセージを投稿する
+
+**実行手順**:
+1. Slackで以下のメッセージを投稿：
+   - "Urgent error in production"
+   - "Test @channel notification"
+
+**期待結果**:
+- 複数のキーワードにマッチするメッセージも赤太文字で表示される
+- メッセージ全体がハイライトされる
+
+#### 5.7.3 正規表現パターンテスト
+
+**作業内容**: 正規表現パターンのマッチングを確認する
+
+**実行手順**:
+1. 設定ファイルに以下のキーワードを追加：
+   ```json
+   "keywords": [
+     "/\\b(bug|issue)\\b/i",
+     "/pr-\\d+/i"
+   ]
+   ```
+2. アプリケーションを再起動
+3. Slackで以下のメッセージを投稿：
+   - "Found a bug in the code"
+   - "This is debugging, not a bug"
+   - "Check pr-123 for details"
+   - "Improved performance"
+
+**期待結果**:
+- "Found a bug in the code"と"Check pr-123 for details"が赤太文字で表示される
+- "This is debugging, not a bug"は通常色で表示される（単語境界のため）
+- "Improved performance"は通常色で表示される
+
+#### 5.7.4 ハイライト設定なしテスト
+
+**作業内容**: ハイライト設定がない場合の動作を確認する
+
+**実行手順**:
+1. 設定ファイルから`highlight`セクションを削除
+2. アプリケーションを再起動
+3. 任意のメッセージを投稿
+
+**期待結果**:
+- 全てのメッセージが通常色で表示される
+- エラーが発生しない
+
+#### 5.7.5 無効な正規表現テスト
+
+**作業内容**: 無効な正規表現が設定された場合の動作を確認する
+
+**実行手順**:
+1. 設定ファイルに無効な正規表現を追加：
+   ```json
+   "keywords": [
+     "/[invalid/i",
+     "/valid/i"
+   ]
+   ```
+2. アプリケーションを起動
+
+**期待結果**:
+- STDERRに無効な正規表現のエラーメッセージが表示される
+- アプリケーションが終了する
+
+### 5.8 パイプ・リダイレクトテスト
 
 **作業内容**: 出力をパイプやリダイレクトで処理する
 
@@ -342,6 +448,11 @@ node src/main.js | wc -l
 - [ ] エラーハンドリングが適切に動作する
 - [ ] シャットダウンが正常に動作する
 - [ ] パイプ・リダイレクトが正常に動作する
+- [ ] キーワードマッチングによるハイライト表示が動作する
+- [ ] 複数キーワードマッチングが正しく動作する
+- [ ] 正規表現パターンマッチングが正しく動作する
+- [ ] ハイライト設定なしでも正常に動作する
+- [ ] 無効な正規表現の適切なエラーハンドリングが動作する
 
 ## 8. 参考リンク
 
