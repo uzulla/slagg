@@ -9,7 +9,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 1.1, 2.1, 2.3, 2.5_
 
-- [-] 2. ConfigurationManagerの拡張
+- [x] 2. ConfigurationManagerの拡張
   - `.env.json`ファイルの`highlight`セクション読み込み機能を追加
   - `highlight`設定の検証機能を実装
   - `getHighlightConfig()`メソッドを追加
@@ -18,7 +18,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 3. ConsoleOutputHandlerの拡張
+- [x] 3. ConsoleOutputHandlerの拡張
   - コンストラクタでHighlightConfigインスタンスを受け取るよう拡張
   - `applyHighlight(formattedMessage, originalText)`メソッドを追加
   - `formatForOutput(message)`メソッドにハイライト処理を統合
@@ -27,7 +27,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 2.1, 2.2, 3.1_
 
-- [ ] 4. メインアプリケーションの統合
+- [-] 4. メインアプリケーションの統合
   - `SlaggApp`クラスでHighlightConfig初期化を追加
   - `setupMessageHandlers`メソッドでConsoleOutputHandlerにハイライト設定を渡す処理を実装
   - ハイライト設定読み込み時のエラーハンドリングを追加

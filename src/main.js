@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { ConfigurationManager } from './config/ConfigurationManager.js';
+import HighlightConfig from './config/HighlightConfig.js';
 import { MessageProcessor } from './message/MessageProcessor.js';
 import { ConsoleOutputHandler } from './message/handlers/ConsoleOutputHandler.js';
 import { TeamManager } from './team/TeamManager.js';
@@ -15,6 +16,7 @@ class SlaggApp {
     this.configManager = new ConfigurationManager();
     this.teamManager = new TeamManager();
     this.messageProcessor = new MessageProcessor();
+    this.highlightConfig = null;
     this.isShuttingDown = false;
   }
 
@@ -26,6 +28,17 @@ class SlaggApp {
     try {
       // Load configuration
       const config = this.configManager.loadConfig();
+
+      // Initialize highlight configuration
+      try {
+        this.highlightConfig = this.configManager.getHighlightConfig();
+        logger.info(
+          `Highlight configuration loaded with ${this.highlightConfig.getKeywords().length} keywords`
+        );
+      } catch (error) {
+        logger.error(`Failed to load highlight configuration: ${error.message}`);
+        throw error;
+      }
 
       // Get valid team configurations
       const teamConfigs = this.configManager.getValidTeamConfigs();
@@ -71,7 +84,7 @@ class SlaggApp {
 
     // Setup console output handler (default enabled)
     const consoleConfig = handlerConfigs.console || { enabled: true };
-    const consoleHandler = new ConsoleOutputHandler(consoleConfig.enabled);
+    const consoleHandler = new ConsoleOutputHandler(consoleConfig.enabled, this.highlightConfig);
     this.messageProcessor.registerHandler(consoleHandler);
   }
 

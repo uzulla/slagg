@@ -96,11 +96,12 @@ describe('main.js', () => {
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
 
       // Check that initialization follows the correct sequence
-      const initializeMethodMatch = mainContent.match(/async initialize\(\) \{([\s\S]*?)\}/);
+      const initializeMethodMatch = mainContent.match(/async initialize\(\) \{([\s\S]*?)\n  \}/);
       expect(initializeMethodMatch).toBeTruthy();
 
       const initializeMethod = initializeMethodMatch[1];
       expect(initializeMethod).toContain('this.configManager.loadConfig()');
+      expect(initializeMethod).toContain('this.configManager.getHighlightConfig()');
       expect(initializeMethod).toContain('this.configManager.getValidTeamConfigs()');
       expect(initializeMethod).toContain('this.setupMessageHandlers(config)');
       expect(initializeMethod).toContain('this.teamManager.initialize(teamConfigs)');
@@ -130,7 +131,7 @@ describe('main.js', () => {
       expect(mainContent).toContain('setupMessageHandlers(config)');
       expect(mainContent).toContain('config.handlers || {}');
       expect(mainContent).toContain('handlerConfigs.console || { enabled: true }');
-      expect(mainContent).toContain('new ConsoleOutputHandler(consoleConfig.enabled)');
+      expect(mainContent).toContain('new ConsoleOutputHandler(consoleConfig.enabled, this.highlightConfig)');
       expect(mainContent).toContain('this.messageProcessor.registerHandler(consoleHandler)');
     });
 
