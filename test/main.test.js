@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // We need to export the SlaggApp class from main.js to test it properly
 // Let's create a focused test that tests the main.js functionality
@@ -30,7 +30,7 @@ describe('main.js', () => {
     process.exit = originalProcessExit;
     process.on = originalProcessOn;
     process.argv = originalProcessArgv;
-    
+
     // Clear module cache to ensure fresh imports
     vi.resetModules();
   });
@@ -45,10 +45,16 @@ describe('main.js', () => {
     it('should import required dependencies', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
-      expect(mainContent).toContain("import { ConfigurationManager } from './config/ConfigurationManager.js'");
-      expect(mainContent).toContain("import { MessageProcessor } from './message/MessageProcessor.js'");
-      expect(mainContent).toContain("import { ConsoleOutputHandler } from './message/handlers/ConsoleOutputHandler.js'");
+
+      expect(mainContent).toContain(
+        "import { ConfigurationManager } from './config/ConfigurationManager.js'"
+      );
+      expect(mainContent).toContain(
+        "import { MessageProcessor } from './message/MessageProcessor.js'"
+      );
+      expect(mainContent).toContain(
+        "import { ConsoleOutputHandler } from './message/handlers/ConsoleOutputHandler.js'"
+      );
       expect(mainContent).toContain("import { TeamManager } from './team/TeamManager.js'");
       expect(mainContent).toContain("import { logger } from './utils/Logger.js'");
     });
@@ -56,7 +62,7 @@ describe('main.js', () => {
     it('should define SlaggApp class', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('class SlaggApp');
       expect(mainContent).toContain('constructor()');
       expect(mainContent).toContain('async initialize()');
@@ -69,7 +75,7 @@ describe('main.js', () => {
     it('should have main function', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('async function main()');
       expect(mainContent).toContain('const app = new SlaggApp()');
       expect(mainContent).toContain('await app.start()');
@@ -78,7 +84,7 @@ describe('main.js', () => {
     it('should have conditional execution check', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('if (import.meta.url === `file://${process.argv[1]}`)');
       expect(mainContent).toContain('main().catch((error) => {');
     });
@@ -88,27 +94,29 @@ describe('main.js', () => {
     it('should handle initialization sequence', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       // Check that initialization follows the correct sequence
       const initializeMethodMatch = mainContent.match(/async initialize\(\) \{([\s\S]*?)\}/);
       expect(initializeMethodMatch).toBeTruthy();
-      
+
       const initializeMethod = initializeMethodMatch[1];
       expect(initializeMethod).toContain('this.configManager.loadConfig()');
       expect(initializeMethod).toContain('this.configManager.getValidTeamConfigs()');
       expect(initializeMethod).toContain('this.setupMessageHandlers(config)');
       expect(initializeMethod).toContain('this.teamManager.initialize(teamConfigs)');
-      expect(initializeMethod).toContain('this.teamManager.setMessageProcessor(this.messageProcessor)');
+      expect(initializeMethod).toContain(
+        'this.teamManager.setMessageProcessor(this.messageProcessor)'
+      );
       expect(initializeMethod).toContain('this.displayStartupStatus(teamConfigs)');
     });
 
     it('should handle start sequence', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       const startMethodMatch = mainContent.match(/async start\(\) \{([\s\S]*?)\}/);
       expect(startMethodMatch).toBeTruthy();
-      
+
       const startMethod = startMethodMatch[1];
       expect(startMethod).toContain('await this.initialize()');
       expect(startMethod).toContain('await this.teamManager.connectAllTeams()');
@@ -118,7 +126,7 @@ describe('main.js', () => {
     it('should setup message handlers correctly', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('setupMessageHandlers(config)');
       expect(mainContent).toContain('config.handlers || {}');
       expect(mainContent).toContain('handlerConfigs.console || { enabled: true }');
@@ -129,10 +137,12 @@ describe('main.js', () => {
     it('should display startup status', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
-      const displayStatusMatch = mainContent.match(/displayStartupStatus\(teamConfigs\) \{([\s\S]*?)\}/);
+
+      const displayStatusMatch = mainContent.match(
+        /displayStartupStatus\(teamConfigs\) \{([\s\S]*?)\}/
+      );
       expect(displayStatusMatch).toBeTruthy();
-      
+
       const displayStatus = displayStatusMatch[1];
       expect(displayStatus).toContain('Object.keys(teamConfigs)');
       expect(displayStatus).toContain('Object.values(teamConfigs).reduce');
@@ -145,10 +155,10 @@ describe('main.js', () => {
     it('should setup shutdown handlers for SIGINT and SIGTERM', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       const setupShutdownMatch = mainContent.match(/setupShutdownHandlers\(\) \{([\s\S]*?)\}/);
       expect(setupShutdownMatch).toBeTruthy();
-      
+
       const setupShutdown = setupShutdownMatch[1];
       expect(mainContent).toContain("process.on('SIGINT'");
       expect(mainContent).toContain("process.on('SIGTERM'");
@@ -158,14 +168,18 @@ describe('main.js', () => {
     it('should handle graceful shutdown', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
-      const shutdownHandlerMatch = mainContent.match(/const shutdownHandler = async \(signal\) => \{([\s\S]*?)\};/);
+
+      const shutdownHandlerMatch = mainContent.match(
+        /const shutdownHandler = async \(signal\) => \{([\s\S]*?)\};/
+      );
       expect(shutdownHandlerMatch).toBeTruthy();
-      
+
       const shutdownHandler = shutdownHandlerMatch[1];
       expect(shutdownHandler).toContain('if (this.isShuttingDown)');
       expect(shutdownHandler).toContain('this.isShuttingDown = true');
-      expect(shutdownHandler).toContain('logger.info(`Received ${signal}, shutting down gracefully...`)');
+      expect(shutdownHandler).toContain(
+        'logger.info(`Received ${signal}, shutting down gracefully...`)'
+      );
       expect(shutdownHandler).toContain('await this.teamManager.shutdown()');
       expect(shutdownHandler).toContain('process.exit(0)');
       expect(shutdownHandler).toContain('process.exit(1)');
@@ -174,7 +188,7 @@ describe('main.js', () => {
     it('should prevent multiple shutdown attempts', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('if (this.isShuttingDown)');
       expect(mainContent).toContain('return;');
       expect(mainContent).toContain('this.isShuttingDown = true');
@@ -185,7 +199,7 @@ describe('main.js', () => {
     it('should handle initialization errors', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('async initialize()');
       expect(mainContent).toContain('try {');
       expect(mainContent).toContain('} catch (error) {');
@@ -196,21 +210,25 @@ describe('main.js', () => {
     it('should handle start errors', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('async start()');
       expect(mainContent).toContain('try {');
       expect(mainContent).toContain('} catch (error) {');
-      expect(mainContent).toContain('logger.error(`Failed to start application: ${error.message}`)');
+      expect(mainContent).toContain(
+        'logger.error(`Failed to start application: ${error.message}`)'
+      );
       expect(mainContent).toContain('process.exit(1)');
     });
 
     it('should handle shutdown errors', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
-      const shutdownHandlerMatch = mainContent.match(/const shutdownHandler = async \(signal\) => \{([\s\S]*?)\};/);
+
+      const shutdownHandlerMatch = mainContent.match(
+        /const shutdownHandler = async \(signal\) => \{([\s\S]*?)\};/
+      );
       expect(shutdownHandlerMatch).toBeTruthy();
-      
+
       const shutdownHandler = shutdownHandlerMatch[1];
       expect(shutdownHandler).toContain('try {');
       expect(shutdownHandler).toContain('} catch (error) {');
@@ -220,7 +238,7 @@ describe('main.js', () => {
     it('should handle main function errors', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('main().catch((error) => {');
       expect(mainContent).toContain('logger.error(`Application failed: ${error.message}`)');
       expect(mainContent).toContain('process.exit(1)');
@@ -231,21 +249,21 @@ describe('main.js', () => {
     it('should create all required component instances', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       const constructorMatch = mainContent.match(/constructor\(\) \{([\s\S]*?)\}/);
       expect(constructorMatch).toBeTruthy();
-      
-      const constructor = constructorMatch[1];
-      expect(constructor).toContain('this.configManager = new ConfigurationManager()');
-      expect(constructor).toContain('this.teamManager = new TeamManager()');
-      expect(constructor).toContain('this.messageProcessor = new MessageProcessor()');
-      expect(constructor).toContain('this.isShuttingDown = false');
+
+      const constructorContent = constructorMatch[1];
+      expect(constructorContent).toContain('this.configManager = new ConfigurationManager()');
+      expect(constructorContent).toContain('this.teamManager = new TeamManager()');
+      expect(constructorContent).toContain('this.messageProcessor = new MessageProcessor()');
+      expect(constructorContent).toContain('this.isShuttingDown = false');
     });
 
     it('should wire components together correctly', async () => {
       const fs = await import('node:fs');
       const mainContent = fs.readFileSync('src/main.js', 'utf8');
-      
+
       expect(mainContent).toContain('this.teamManager.setMessageProcessor(this.messageProcessor)');
       expect(mainContent).toContain('this.messageProcessor.registerHandler(consoleHandler)');
     });

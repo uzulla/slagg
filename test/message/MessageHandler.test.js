@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { MessageHandler } from '../../src/message/MessageHandler.js';
 
 describe('MessageHandler', () => {
@@ -12,21 +12,23 @@ describe('MessageHandler', () => {
         user: 'test-user',
         text: 'test message',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
-      await expect(handler.handle(message)).rejects.toThrow('handle method must be implemented by subclass');
+      await expect(handler.handle(message)).rejects.toThrow(
+        'handle method must be implemented by subclass'
+      );
     });
 
     it('should throw error when getName method is not implemented', () => {
       const handler = new MessageHandler();
-      
+
       expect(() => handler.getName()).toThrow('getName method must be implemented by subclass');
     });
 
     it('should throw error when isEnabled method is not implemented', () => {
       const handler = new MessageHandler();
-      
+
       expect(() => handler.isEnabled()).toThrow('isEnabled method must be implemented by subclass');
     });
   });
@@ -55,7 +57,7 @@ describe('MessageHandler', () => {
         user: 'test-user',
         text: 'test message',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       const result = await handler.handle(message);

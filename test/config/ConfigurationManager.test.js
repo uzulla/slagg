@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigurationManager } from '../../src/config/ConfigurationManager.js';
 import { logger } from '../../src/utils/Logger.js';
 
@@ -29,12 +29,12 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890', 'C0987654321']
-          }
+            channels: ['C1234567890', 'C0987654321'],
+          },
         },
         handlers: {
-          console: { enabled: true }
-        }
+          console: { enabled: true },
+        },
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
@@ -61,7 +61,9 @@ describe('ConfigurationManager', () => {
       mockReadFileSync.mockReturnValue('{ invalid json }');
 
       expect(() => configManager.loadConfig()).toThrow('Invalid JSON in configuration file');
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON in configuration file'));
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid JSON in configuration file')
+      );
     });
 
     it('should throw error and log for other file system errors', () => {
@@ -70,8 +72,12 @@ describe('ConfigurationManager', () => {
         throw error;
       });
 
-      expect(() => configManager.loadConfig()).toThrow('Failed to load configuration: Permission denied');
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to load configuration: Permission denied');
+      expect(() => configManager.loadConfig()).toThrow(
+        'Failed to load configuration: Permission denied'
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to load configuration: Permission denied'
+      );
     });
   });
 
@@ -83,13 +89,17 @@ describe('ConfigurationManager', () => {
     it('should throw error when teams section is missing', () => {
       configManager.config = { handlers: {} };
 
-      expect(() => configManager.validateConfig()).toThrow('Configuration must contain a "teams" object');
+      expect(() => configManager.validateConfig()).toThrow(
+        'Configuration must contain a "teams" object'
+      );
     });
 
     it('should throw error when teams section is not an object', () => {
       configManager.config = { teams: 'invalid' };
 
-      expect(() => configManager.validateConfig()).toThrow('Configuration must contain a "teams" object');
+      expect(() => configManager.validateConfig()).toThrow(
+        'Configuration must contain a "teams" object'
+      );
     });
 
     it('should throw error when no teams are configured', () => {
@@ -104,13 +114,15 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
-          }
+            channels: ['C1234567890'],
+          },
         },
-        handlers: 'invalid'
+        handlers: 'invalid',
       };
 
-      expect(() => configManager.validateConfig()).toThrow('Configuration "handlers" must be an object');
+      expect(() => configManager.validateConfig()).toThrow(
+        'Configuration "handlers" must be an object'
+      );
     });
 
     it('should validate successfully with valid configuration', () => {
@@ -119,12 +131,12 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890', 'C0987654321']
-          }
+            channels: ['C1234567890', 'C0987654321'],
+          },
         },
         handlers: {
-          console: { enabled: true }
-        }
+          console: { enabled: true },
+        },
       };
 
       expect(() => configManager.validateConfig()).not.toThrow();
@@ -136,9 +148,9 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
-          }
-        }
+            channels: ['C1234567890'],
+          },
+        },
       };
 
       expect(() => configManager.validateConfig()).not.toThrow();
@@ -147,104 +159,150 @@ describe('ConfigurationManager', () => {
 
   describe('validateTeamConfig', () => {
     it('should throw error and log when team config is not an object', () => {
-      expect(() => configManager.validateTeamConfig('test', 'invalid')).toThrow('Team "test" configuration must be an object');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" configuration must be an object');
+      expect(() => configManager.validateTeamConfig('test', 'invalid')).toThrow(
+        'Team "test" configuration must be an object'
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" configuration must be an object'
+      );
     });
 
     it('should throw error and log when appToken is missing', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        botToken: 'xoxb-123456789',
-        channels: ['C1234567890'] 
-      })).toThrow('Team "test" must have a valid appToken string');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have a valid appToken string');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          botToken: 'xoxb-123456789',
+          channels: ['C1234567890'],
+        })
+      ).toThrow('Team "test" must have a valid appToken string');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have a valid appToken string'
+      );
     });
 
     it('should throw error and log when botToken is missing', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        channels: ['C1234567890'] 
-      })).toThrow('Team "test" must have a valid botToken string');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have a valid botToken string');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          channels: ['C1234567890'],
+        })
+      ).toThrow('Team "test" must have a valid botToken string');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have a valid botToken string'
+      );
     });
 
     it('should throw error and log when appToken is not a string', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 123,
-        botToken: 'xoxb-123456789',
-        channels: ['C1234567890'] 
-      })).toThrow('Team "test" must have a valid appToken string');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have a valid appToken string');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 123,
+          botToken: 'xoxb-123456789',
+          channels: ['C1234567890'],
+        })
+      ).toThrow('Team "test" must have a valid appToken string');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have a valid appToken string'
+      );
     });
 
     it('should throw error and log when botToken is not a string', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        botToken: 123,
-        channels: ['C1234567890'] 
-      })).toThrow('Team "test" must have a valid botToken string');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have a valid botToken string');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 123,
+          channels: ['C1234567890'],
+        })
+      ).toThrow('Team "test" must have a valid botToken string');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have a valid botToken string'
+      );
     });
 
     it('should throw error and log when appToken format is invalid', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'invalid-token',
-        botToken: 'xoxb-123456789',
-        channels: ['C1234567890'] 
-      })).toThrow('Team "test" has invalid appToken format');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" has invalid appToken format. Expected format: xapp-1-xxxxx');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'invalid-token',
+          botToken: 'xoxb-123456789',
+          channels: ['C1234567890'],
+        })
+      ).toThrow('Team "test" has invalid appToken format');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" has invalid appToken format. Expected format: xapp-1-xxxxx'
+      );
     });
 
     it('should throw error and log when botToken format is invalid', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        botToken: 'invalid-token',
-        channels: ['C1234567890'] 
-      })).toThrow('Team "test" has invalid botToken format');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" has invalid botToken format. Expected format: xoxb-xxxxx');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 'invalid-token',
+          channels: ['C1234567890'],
+        })
+      ).toThrow('Team "test" has invalid botToken format');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" has invalid botToken format. Expected format: xoxb-xxxxx'
+      );
     });
 
     it('should validate successfully with valid team config', () => {
-      expect(() => configManager.validateTeamConfig('test', {
-        appToken: 'xapp-1-A123456789',
-        botToken: 'xoxb-123456789-ABC',
-        channels: ['C1234567890', 'C0987654321']
-      })).not.toThrow();
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 'xoxb-123456789-ABC',
+          channels: ['C1234567890', 'C0987654321'],
+        })
+      ).not.toThrow();
       expect(mockLogger.error).not.toHaveBeenCalled();
     });
 
     it('should throw error and log when channels is missing', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        botToken: 'xoxb-123456789-ABC'
-      })).toThrow('Team "test" must have a "channels" array');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have a "channels" array');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 'xoxb-123456789-ABC',
+        })
+      ).toThrow('Team "test" must have a "channels" array');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have a "channels" array'
+      );
     });
 
     it('should throw error and log when channels is not an array', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        botToken: 'xoxb-123456789-ABC',
-        channels: 'invalid' 
-      })).toThrow('Team "test" must have a "channels" array');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have a "channels" array');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 'xoxb-123456789-ABC',
+          channels: 'invalid',
+        })
+      ).toThrow('Team "test" must have a "channels" array');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have a "channels" array'
+      );
     });
 
     it('should throw error and log when channels array is empty', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        botToken: 'xoxb-123456789-ABC',
-        channels: [] 
-      })).toThrow('Team "test" must have at least one channel configured');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" must have at least one channel configured');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 'xoxb-123456789-ABC',
+          channels: [],
+        })
+      ).toThrow('Team "test" must have at least one channel configured');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" must have at least one channel configured'
+      );
     });
 
     it('should throw error and log when channel ID format is invalid', () => {
-      expect(() => configManager.validateTeamConfig('test', { 
-        appToken: 'xapp-1-A123456789',
-        botToken: 'xoxb-123456789-ABC',
-        channels: ['invalid-channel'] 
-      })).toThrow('Team "test" has invalid channel ID: invalid-channel');
-      expect(mockLogger.error).toHaveBeenCalledWith('Configuration error: Team "test" has invalid channel ID: invalid-channel. Expected format: C followed by 10 characters');
+      expect(() =>
+        configManager.validateTeamConfig('test', {
+          appToken: 'xapp-1-A123456789',
+          botToken: 'xoxb-123456789-ABC',
+          channels: ['invalid-channel'],
+        })
+      ).toThrow('Team "test" has invalid channel ID: invalid-channel');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Configuration error: Team "test" has invalid channel ID: invalid-channel. Expected format: C followed by 10 characters'
+      );
     });
   });
 
@@ -320,15 +378,17 @@ describe('ConfigurationManager', () => {
 
   describe('getTeamConfigs', () => {
     it('should throw error when configuration is not loaded', () => {
-      expect(() => configManager.getTeamConfigs()).toThrow('Configuration not loaded. Call loadConfig() first.');
+      expect(() => configManager.getTeamConfigs()).toThrow(
+        'Configuration not loaded. Call loadConfig() first.'
+      );
     });
 
     it('should return team configurations when loaded', () => {
       const teams = {
         mycompany: {
           token: 'xapp-1-A123456789',
-          channels: ['C1234567890']
-        }
+          channels: ['C1234567890'],
+        },
       };
       configManager.config = { teams };
 
@@ -342,19 +402,23 @@ describe('ConfigurationManager', () => {
         teams: {
           mycompany: {
             token: 'xapp-1-A123456789',
-            channels: ['C1234567890', 'C0987654321']
-          }
-        }
+            channels: ['C1234567890', 'C0987654321'],
+          },
+        },
       };
     });
 
     it('should throw error when configuration is not loaded', () => {
       configManager.config = null;
-      expect(() => configManager.getChannelIds('mycompany')).toThrow('Configuration not loaded. Call loadConfig() first.');
+      expect(() => configManager.getChannelIds('mycompany')).toThrow(
+        'Configuration not loaded. Call loadConfig() first.'
+      );
     });
 
     it('should throw error when team is not found', () => {
-      expect(() => configManager.getChannelIds('nonexistent')).toThrow('Team "nonexistent" not found in configuration');
+      expect(() => configManager.getChannelIds('nonexistent')).toThrow(
+        'Team "nonexistent" not found in configuration'
+      );
     });
 
     it('should return channel IDs for existing team', () => {
@@ -364,7 +428,9 @@ describe('ConfigurationManager', () => {
 
   describe('getHandlerConfigs', () => {
     it('should throw error when configuration is not loaded', () => {
-      expect(() => configManager.getHandlerConfigs()).toThrow('Configuration not loaded. Call loadConfig() first.');
+      expect(() => configManager.getHandlerConfigs()).toThrow(
+        'Configuration not loaded. Call loadConfig() first.'
+      );
     });
 
     it('should return handler configurations when present', () => {
@@ -384,12 +450,16 @@ describe('ConfigurationManager', () => {
   describe('getTeamTokens', () => {
     it('should throw error when configuration is not loaded', () => {
       configManager.config = null;
-      expect(() => configManager.getTeamTokens('mycompany')).toThrow('Configuration not loaded. Call loadConfig() first.');
+      expect(() => configManager.getTeamTokens('mycompany')).toThrow(
+        'Configuration not loaded. Call loadConfig() first.'
+      );
     });
 
     it('should throw error when team is not found', () => {
       configManager.config = { teams: {} };
-      expect(() => configManager.getTeamTokens('nonexistent')).toThrow('Team "nonexistent" not found in configuration');
+      expect(() => configManager.getTeamTokens('nonexistent')).toThrow(
+        'Team "nonexistent" not found in configuration'
+      );
     });
 
     it('should return tokens for existing team', () => {
@@ -398,15 +468,15 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
-          }
-        }
+            channels: ['C1234567890'],
+          },
+        },
       };
 
       const result = configManager.getTeamTokens('mycompany');
       expect(result).toEqual({
         appToken: 'xapp-1-A123456789',
-        botToken: 'xoxb-123456789-ABC'
+        botToken: 'xoxb-123456789-ABC',
       });
     });
   });
@@ -418,19 +488,23 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
-          }
-        }
+            channels: ['C1234567890'],
+          },
+        },
       };
     });
 
     it('should throw error when configuration is not loaded', () => {
       configManager.config = null;
-      expect(() => configManager.getTeamToken('mycompany')).toThrow('Configuration not loaded. Call loadConfig() first.');
+      expect(() => configManager.getTeamToken('mycompany')).toThrow(
+        'Configuration not loaded. Call loadConfig() first.'
+      );
     });
 
     it('should throw error when team is not found', () => {
-      expect(() => configManager.getTeamToken('nonexistent')).toThrow('Team "nonexistent" not found in configuration');
+      expect(() => configManager.getTeamToken('nonexistent')).toThrow(
+        'Team "nonexistent" not found in configuration'
+      );
     });
 
     it('should return app token for existing team', () => {
@@ -440,7 +514,9 @@ describe('ConfigurationManager', () => {
 
   describe('getValidTeamConfigs', () => {
     it('should throw error when configuration is not loaded', () => {
-      expect(() => configManager.getValidTeamConfigs()).toThrow('Configuration not loaded. Call loadConfig() first.');
+      expect(() => configManager.getValidTeamConfigs()).toThrow(
+        'Configuration not loaded. Call loadConfig() first.'
+      );
     });
 
     it('should return valid team configurations and skip invalid ones', () => {
@@ -449,24 +525,24 @@ describe('ConfigurationManager', () => {
           validTeam: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
+            channels: ['C1234567890'],
           },
           anotherValidTeam: {
             appToken: 'xapp-1-B987654321',
             botToken: 'xoxb-987654321-XYZ',
-            channels: ['C0987654321']
+            channels: ['C0987654321'],
           },
           invalidTeam: {
             appToken: 'invalid-token',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
+            channels: ['C1234567890'],
           },
           invalidTeamBot: {
             appToken: 'xapp-1-C111111111',
             botToken: 'invalid-bot-token',
-            channels: ['C1111111111']
-          }
-        }
+            channels: ['C1111111111'],
+          },
+        },
       };
 
       const result = configManager.getValidTeamConfigs();
@@ -475,16 +551,20 @@ describe('ConfigurationManager', () => {
         validTeam: {
           appToken: 'xapp-1-A123456789',
           botToken: 'xoxb-123456789-ABC',
-          channels: ['C1234567890']
+          channels: ['C1234567890'],
         },
         anotherValidTeam: {
           appToken: 'xapp-1-B987654321',
           botToken: 'xoxb-987654321-XYZ',
-          channels: ['C0987654321']
-        }
+          channels: ['C0987654321'],
+        },
       });
-      expect(mockLogger.error).toHaveBeenCalledWith('Team "invalidTeam" skipped due to configuration error: Team "invalidTeam" has invalid appToken format. Expected format: xapp-1-xxxxx');
-      expect(mockLogger.error).toHaveBeenCalledWith('Team "invalidTeamBot" skipped due to configuration error: Team "invalidTeamBot" has invalid botToken format. Expected format: xoxb-xxxxx');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Team "invalidTeam" skipped due to configuration error: Team "invalidTeam" has invalid appToken format. Expected format: xapp-1-xxxxx'
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Team "invalidTeamBot" skipped due to configuration error: Team "invalidTeamBot" has invalid botToken format. Expected format: xoxb-xxxxx'
+      );
     });
 
     it('should throw error when no valid teams found', () => {
@@ -492,16 +572,18 @@ describe('ConfigurationManager', () => {
         teams: {
           invalidTeam1: {
             token: 'invalid-token',
-            channels: ['C1234567890']
+            channels: ['C1234567890'],
           },
           invalidTeam2: {
             token: 'another-invalid',
-            channels: ['C0987654321']
-          }
-        }
+            channels: ['C0987654321'],
+          },
+        },
       };
 
-      expect(() => configManager.getValidTeamConfigs()).toThrow('No valid team configurations found');
+      expect(() => configManager.getValidTeamConfigs()).toThrow(
+        'No valid team configurations found'
+      );
       expect(mockLogger.error).toHaveBeenCalledWith('No valid team configurations found');
     });
   });
@@ -540,9 +622,9 @@ describe('ConfigurationManager', () => {
           mycompany: {
             appToken: 'xapp-1-A123456789',
             botToken: 'xoxb-123456789-ABC',
-            channels: ['C1234567890']
-          }
-        }
+            channels: ['C1234567890'],
+          },
+        },
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(validConfig));
@@ -569,22 +651,26 @@ describe('ConfigurationManager', () => {
   describe('Error Handling Scenarios', () => {
     describe('Invalid Token Detection', () => {
       it('should detect and log missing appToken', () => {
-        expect(() => configManager.validateTeamConfig('test', {
-          botToken: 'xoxb-123456789',
-          channels: ['C1234567890']
-        })).toThrow('Team "test" must have a valid appToken string');
-        
+        expect(() =>
+          configManager.validateTeamConfig('test', {
+            botToken: 'xoxb-123456789',
+            channels: ['C1234567890'],
+          })
+        ).toThrow('Team "test" must have a valid appToken string');
+
         expect(mockLogger.error).toHaveBeenCalledWith(
           'Configuration error: Team "test" must have a valid appToken string'
         );
       });
 
       it('should detect and log missing botToken', () => {
-        expect(() => configManager.validateTeamConfig('test', {
-          appToken: 'xapp-1-A123456789',
-          channels: ['C1234567890']
-        })).toThrow('Team "test" must have a valid botToken string');
-        
+        expect(() =>
+          configManager.validateTeamConfig('test', {
+            appToken: 'xapp-1-A123456789',
+            channels: ['C1234567890'],
+          })
+        ).toThrow('Team "test" must have a valid botToken string');
+
         expect(mockLogger.error).toHaveBeenCalledWith(
           'Configuration error: Team "test" must have a valid botToken string'
         );
@@ -592,28 +678,46 @@ describe('ConfigurationManager', () => {
 
       it('should detect and log various invalid token formats', () => {
         const invalidConfigs = [
-          { 
-            config: { appToken: 'invalid-app', botToken: 'xoxb-123456789', channels: ['C1234567890'] },
-            expectedError: 'has invalid appToken format'
+          {
+            config: {
+              appToken: 'invalid-app',
+              botToken: 'xoxb-123456789',
+              channels: ['C1234567890'],
+            },
+            expectedError: 'has invalid appToken format',
           },
-          { 
-            config: { appToken: 'xapp-1-A123456789', botToken: 'invalid-bot', channels: ['C1234567890'] },
-            expectedError: 'has invalid botToken format'
+          {
+            config: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'invalid-bot',
+              channels: ['C1234567890'],
+            },
+            expectedError: 'has invalid botToken format',
           },
-          { 
-            config: { appToken: 'xapp-2-A123456789', botToken: 'xoxb-123456789', channels: ['C1234567890'] },
-            expectedError: 'has invalid appToken format'
+          {
+            config: {
+              appToken: 'xapp-2-A123456789',
+              botToken: 'xoxb-123456789',
+              channels: ['C1234567890'],
+            },
+            expectedError: 'has invalid appToken format',
           },
-          { 
-            config: { appToken: 'xapp-1-A123456789', botToken: 'xoxp-123456789', channels: ['C1234567890'] },
-            expectedError: 'has invalid botToken format'
-          }
+          {
+            config: {
+              appToken: 'xapp-1-A123456789',
+              botToken: 'xoxp-123456789',
+              channels: ['C1234567890'],
+            },
+            expectedError: 'has invalid botToken format',
+          },
         ];
 
         invalidConfigs.forEach(({ config, expectedError }, index) => {
           const teamName = `team${index}`;
-          expect(() => configManager.validateTeamConfig(teamName, config)).toThrow(`Team "${teamName}" ${expectedError}`);
-          
+          expect(() => configManager.validateTeamConfig(teamName, config)).toThrow(
+            `Team "${teamName}" ${expectedError}`
+          );
+
           if (expectedError === 'has invalid appToken format') {
             expect(mockLogger.error).toHaveBeenCalledWith(
               `Configuration error: Team "${teamName}" has invalid appToken format. Expected format: xapp-1-xxxxx`
@@ -646,15 +750,23 @@ describe('ConfigurationManager', () => {
           throw error;
         });
 
-        expect(() => configManager.loadConfig()).toThrow('Failed to load configuration: Permission denied');
-        expect(mockLogger.error).toHaveBeenCalledWith('Failed to load configuration: Permission denied');
+        expect(() => configManager.loadConfig()).toThrow(
+          'Failed to load configuration: Permission denied'
+        );
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          'Failed to load configuration: Permission denied'
+        );
       });
 
       it('should handle corrupted JSON files', () => {
-        mockReadFileSync.mockReturnValue('{ "teams": { "test": { "token": "xapp-1-A123456789", "channels": [}');
+        mockReadFileSync.mockReturnValue(
+          '{ "teams": { "test": { "token": "xapp-1-A123456789", "channels": [}'
+        );
 
         expect(() => configManager.loadConfig()).toThrow('Invalid JSON in configuration file');
-        expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON in configuration file'));
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          expect.stringContaining('Invalid JSON in configuration file')
+        );
       });
     });
   });

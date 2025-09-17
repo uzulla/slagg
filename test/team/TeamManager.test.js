@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TeamManager } from '../../src/team/TeamManager.js';
 
 // Mock SlackClient
 vi.mock('../../src/team/SlackClient.js', () => ({
-  SlackClient: vi.fn()
+  SlackClient: vi.fn(),
 }));
 
 // Mock the logger
@@ -11,8 +11,8 @@ vi.mock('../../src/utils/Logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn()
-  }
+    error: vi.fn(),
+  },
 }));
 
 describe('TeamManager', () => {
@@ -20,16 +20,16 @@ describe('TeamManager', () => {
   let mockSlackClient;
   let mockMessageProcessor;
   const testTeamsConfig = {
-    'team1': {
+    team1: {
       appToken: 'xapp-1-app-token1',
       botToken: 'xoxb-bot-token1',
-      channels: ['C1111111111', 'C2222222222']
+      channels: ['C1111111111', 'C2222222222'],
     },
-    'team2': {
+    team2: {
       appToken: 'xapp-1-app-token2',
       botToken: 'xoxb-bot-token2',
-      channels: ['C3333333333']
-    }
+      channels: ['C3333333333'],
+    },
   };
 
   beforeEach(async () => {
@@ -41,12 +41,12 @@ describe('TeamManager', () => {
       setMessageCallback: vi.fn(),
       connect: vi.fn().mockResolvedValue(undefined),
       disconnect: vi.fn().mockResolvedValue(undefined),
-      isClientConnected: vi.fn().mockReturnValue(true)
+      isClientConnected: vi.fn().mockReturnValue(true),
     };
 
     // Mock message processor
     mockMessageProcessor = {
-      processMessage: vi.fn().mockResolvedValue(undefined)
+      processMessage: vi.fn().mockResolvedValue(undefined),
     };
 
     // Mock SlackClient constructor
@@ -77,13 +77,15 @@ describe('TeamManager', () => {
     });
 
     it('should throw error for invalid message processor', () => {
-      expect(() => teamManager.setMessageProcessor({}))
-        .toThrow('Message processor must implement processMessage method');
+      expect(() => teamManager.setMessageProcessor({})).toThrow(
+        'Message processor must implement processMessage method'
+      );
     });
 
     it('should throw error for null message processor', () => {
-      expect(() => teamManager.setMessageProcessor(null))
-        .toThrow('Message processor must implement processMessage method');
+      expect(() => teamManager.setMessageProcessor(null)).toThrow(
+        'Message processor must implement processMessage method'
+      );
     });
   });
 
@@ -105,94 +107,101 @@ describe('TeamManager', () => {
 
     it('should throw error for team with missing appToken', async () => {
       const invalidConfig = {
-        'team1': {
+        team1: {
           botToken: 'xoxb-bot-token1',
-          channels: ['C1111111111']
-        }
+          channels: ['C1111111111'],
+        },
       };
 
-      await expect(teamManager.initialize(invalidConfig))
-        .rejects.toThrow('Team team1: appToken is required and must be a string');
+      await expect(teamManager.initialize(invalidConfig)).rejects.toThrow(
+        'Team team1: appToken is required and must be a string'
+      );
     });
 
     it('should throw error for team with missing botToken', async () => {
       const invalidConfig = {
-        'team1': {
+        team1: {
           appToken: 'xapp-1-app-token1',
-          channels: ['C1111111111']
-        }
+          channels: ['C1111111111'],
+        },
       };
 
-      await expect(teamManager.initialize(invalidConfig))
-        .rejects.toThrow('Team team1: botToken is required and must be a string');
+      await expect(teamManager.initialize(invalidConfig)).rejects.toThrow(
+        'Team team1: botToken is required and must be a string'
+      );
     });
 
     it('should throw error for team with invalid appToken type', async () => {
       const invalidConfig = {
-        'team1': {
+        team1: {
           appToken: 123,
           botToken: 'xoxb-bot-token1',
-          channels: ['C1111111111']
-        }
+          channels: ['C1111111111'],
+        },
       };
 
-      await expect(teamManager.initialize(invalidConfig))
-        .rejects.toThrow('Team team1: appToken is required and must be a string');
+      await expect(teamManager.initialize(invalidConfig)).rejects.toThrow(
+        'Team team1: appToken is required and must be a string'
+      );
     });
 
     it('should throw error for team with invalid botToken type', async () => {
       const invalidConfig = {
-        'team1': {
+        team1: {
           appToken: 'xapp-1-app-token1',
           botToken: 123,
-          channels: ['C1111111111']
-        }
+          channels: ['C1111111111'],
+        },
       };
 
-      await expect(teamManager.initialize(invalidConfig))
-        .rejects.toThrow('Team team1: botToken is required and must be a string');
+      await expect(teamManager.initialize(invalidConfig)).rejects.toThrow(
+        'Team team1: botToken is required and must be a string'
+      );
     });
 
     it('should throw error if already initialized', async () => {
       await teamManager.initialize(testTeamsConfig);
 
-      await expect(teamManager.initialize(testTeamsConfig))
-        .rejects.toThrow('TeamManager is already initialized');
+      await expect(teamManager.initialize(testTeamsConfig)).rejects.toThrow(
+        'TeamManager is already initialized'
+      );
     });
 
     it('should throw error for missing teams configuration', async () => {
-      await expect(teamManager.initialize(null))
-        .rejects.toThrow('Teams configuration is required');
+      await expect(teamManager.initialize(null)).rejects.toThrow('Teams configuration is required');
     });
 
     it('should throw error for empty teams configuration', async () => {
-      await expect(teamManager.initialize({}))
-        .rejects.toThrow('At least one team configuration is required');
+      await expect(teamManager.initialize({})).rejects.toThrow(
+        'At least one team configuration is required'
+      );
     });
 
     it('should throw error for team with missing channels', async () => {
       const invalidConfig = {
-        'team1': {
+        team1: {
           appToken: 'xapp-1-app-token1',
-          botToken: 'xoxb-bot-token1'
-        }
+          botToken: 'xoxb-bot-token1',
+        },
       };
 
-      await expect(teamManager.initialize(invalidConfig))
-        .rejects.toThrow('Team team1: Channels must be a non-empty array');
+      await expect(teamManager.initialize(invalidConfig)).rejects.toThrow(
+        'Team team1: Channels must be a non-empty array'
+      );
     });
 
     it('should throw error for team with empty channels array', async () => {
       const invalidConfig = {
-        'team1': {
+        team1: {
           appToken: 'xapp-1-app-token1',
           botToken: 'xoxb-bot-token1',
-          channels: []
-        }
+          channels: [],
+        },
       };
 
-      await expect(teamManager.initialize(invalidConfig))
-        .rejects.toThrow('Team team1: Channels must be a non-empty array');
+      await expect(teamManager.initialize(invalidConfig)).rejects.toThrow(
+        'Team team1: Channels must be a non-empty array'
+      );
     });
   });
 
@@ -220,15 +229,17 @@ describe('TeamManager', () => {
     it('should throw error if not initialized', async () => {
       const uninitializedManager = new TeamManager();
 
-      await expect(uninitializedManager.connectAllTeams())
-        .rejects.toThrow('TeamManager must be initialized before connecting');
+      await expect(uninitializedManager.connectAllTeams()).rejects.toThrow(
+        'TeamManager must be initialized before connecting'
+      );
     });
 
     it('should throw error if shutting down', async () => {
       teamManager.isShuttingDown = true;
 
-      await expect(teamManager.connectAllTeams())
-        .rejects.toThrow('Cannot connect teams during shutdown');
+      await expect(teamManager.connectAllTeams()).rejects.toThrow(
+        'Cannot connect teams during shutdown'
+      );
     });
 
     it('should handle partial connection failures', async () => {
@@ -250,8 +261,7 @@ describe('TeamManager', () => {
     it('should throw error if all connections fail', async () => {
       mockSlackClient.connect.mockRejectedValue(new Error('Connection failed'));
 
-      await expect(teamManager.connectAllTeams())
-        .rejects.toThrow('Failed to connect to any teams');
+      await expect(teamManager.connectAllTeams()).rejects.toThrow('Failed to connect to any teams');
     });
   });
 
@@ -307,10 +317,10 @@ describe('TeamManager', () => {
 
     it('should not shutdown twice', async () => {
       await teamManager.shutdown();
-      
+
       // Reset mock call counts
       mockSlackClient.disconnect.mockClear();
-      
+
       await teamManager.shutdown();
 
       expect(mockSlackClient.disconnect).not.toHaveBeenCalled();
@@ -388,7 +398,7 @@ describe('TeamManager', () => {
         channel: 'general',
         user: 'testuser',
         text: 'Hello world',
-        timestamp: '1234567890.123456'
+        timestamp: '1234567890.123456',
       };
 
       await messageCallback(testMessage);
@@ -407,28 +417,29 @@ describe('TeamManager', () => {
         channel: 'general',
         user: 'testuser',
         text: 'Hello world',
-        timestamp: '1234567890.123456'
+        timestamp: '1234567890.123456',
       };
 
       // Should not throw error, but should log it
       await messageCallback(testMessage);
 
       const { logger } = await import('../../src/utils/Logger.js');
-      expect(logger.error).toHaveBeenCalledWith('Team: team1, Error processing message: Processing failed');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Team: team1, Error processing message: Processing failed'
+      );
     });
   });
 
   describe('edge cases', () => {
     it('should handle empty teams after initialization', async () => {
       await teamManager.initialize(testTeamsConfig);
-      
+
       // Manually clear teams to simulate edge case
       teamManager.teams.clear();
-      
+
       // Should throw error when no teams to connect to
-      await expect(teamManager.connectAllTeams())
-        .rejects.toThrow('Failed to connect to any teams');
-      
+      await expect(teamManager.connectAllTeams()).rejects.toThrow('Failed to connect to any teams');
+
       expect(teamManager.clients.size).toBe(0);
     });
 

@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigurationManager } from '../../src/config/ConfigurationManager.js';
 import { MessageProcessor } from '../../src/message/MessageProcessor.js';
 import { ConsoleOutputHandler } from '../../src/message/handlers/ConsoleOutputHandler.js';
-import { TeamManager } from '../../src/team/TeamManager.js';
 import { SlackClient } from '../../src/team/SlackClient.js';
+import { TeamManager } from '../../src/team/TeamManager.js';
 import { logger } from '../../src/utils/Logger.js';
-import fs from 'node:fs';
-import path from 'node:path';
 
 /**
  * Integration tests for basic application flow
@@ -58,14 +58,14 @@ describe('Integration Tests - Basic Flow', () => {
           'test-team': {
             appToken: 'xapp-1-A1234567890',
             botToken: 'xoxb-1234567890-ABC',
-            channels: ['C1234567890', 'C0987654321']
-          }
+            channels: ['C1234567890', 'C0987654321'],
+          },
         },
         handlers: {
           console: {
-            enabled: true
-          }
-        }
+            enabled: true,
+          },
+        },
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));
@@ -91,7 +91,9 @@ describe('Integration Tests - Basic Flow', () => {
       messageProcessor.registerHandler(consoleHandler);
 
       expect(messageProcessor.getHandlerCount()).toBe(1);
-      expect(messageProcessor.getHandler('ConsoleOutputHandler').getName()).toBe('ConsoleOutputHandler');
+      expect(messageProcessor.getHandler('ConsoleOutputHandler').getName()).toBe(
+        'ConsoleOutputHandler'
+      );
     });
 
     it('should process messages through the complete pipeline', async () => {
@@ -108,7 +110,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'testuser',
         text: 'Hello world!',
         timestamp: '1234567890.123456',
-        formattedTime: new Date('2023-01-01T12:00:00Z')
+        formattedTime: new Date('2023-01-01T12:00:00Z'),
       };
 
       // Process message
@@ -131,7 +133,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'user1',
         text: 'First message',
         timestamp: '1234567890.123456',
-        formattedTime: new Date('2023-01-01T12:00:00Z')
+        formattedTime: new Date('2023-01-01T12:00:00Z'),
       };
 
       const message2 = {
@@ -141,7 +143,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'user2',
         text: 'Second message',
         timestamp: '1234567891.123456',
-        formattedTime: new Date('2023-01-01T12:00:01Z')
+        formattedTime: new Date('2023-01-01T12:00:01Z'),
       };
 
       const message3 = {
@@ -151,7 +153,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'user3',
         text: 'Third message',
         timestamp: '1234567889.123456',
-        formattedTime: new Date('2023-01-01T11:59:59Z')
+        formattedTime: new Date('2023-01-01T11:59:59Z'),
       };
 
       // Process messages in random order
@@ -174,22 +176,22 @@ describe('Integration Tests - Basic Flow', () => {
           'company-team': {
             appToken: 'xapp-1-A1234567890',
             botToken: 'xoxb-1234567890-ABC',
-            channels: ['C1111111111', 'C2222222222']
+            channels: ['C1111111111', 'C2222222222'],
           },
           'client-team': {
             appToken: 'xapp-1-B1234567890',
             botToken: 'xoxb-0987654321-DEF',
-            channels: ['C3333333333']
+            channels: ['C3333333333'],
           },
           'opensource-team': {
             appToken: 'xapp-1-C1234567890',
             botToken: 'xoxb-1111111111-GHI',
-            channels: ['C4444444444', 'C5555555555', 'C6666666666']
-          }
+            channels: ['C4444444444', 'C5555555555', 'C6666666666'],
+          },
         },
         handlers: {
-          console: { enabled: true }
-        }
+          console: { enabled: true },
+        },
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));
@@ -220,16 +222,16 @@ describe('Integration Tests - Basic Flow', () => {
 
     it('should create team manager with multiple teams', async () => {
       const testConfig = {
-        'team1': {
+        team1: {
           appToken: 'xapp-1-A1234567890',
           botToken: 'xoxb-1234567890-ABC',
-          channels: ['C1111111111']
+          channels: ['C1111111111'],
         },
-        'team2': {
+        team2: {
           appToken: 'xapp-1-B1234567890',
           botToken: 'xoxb-0987654321-DEF',
-          channels: ['C2222222222']
-        }
+          channels: ['C2222222222'],
+        },
       };
 
       const teamManager = new TeamManager();
@@ -263,7 +265,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'john.doe',
         text: 'Hello everyone!',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await messageProcessor.processMessage(basicMessage);
@@ -277,7 +279,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'jane_smith',
         text: 'Check this out: https://example.com/path?param=value&other=123',
         timestamp: '1234567891.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await messageProcessor.processMessage(specialMessage);
@@ -298,7 +300,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'developer',
         text: 'This is a multiline message\nwith several lines\nof content',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await messageProcessor.processMessage(multilineMessage);
@@ -320,7 +322,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'testuser',
         text: '',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await messageProcessor.processMessage(emptyMessage);
@@ -334,7 +336,7 @@ describe('Integration Tests - Basic Flow', () => {
         user: 'testuser',
         text: '   \t\n   ',
         timestamp: '1234567891.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await messageProcessor.processMessage(whitespaceMessage);
@@ -350,14 +352,14 @@ describe('Integration Tests - Basic Flow', () => {
           'test-team': {
             appToken: 'xapp-1-A1234567890',
             botToken: 'xoxb-1234567890-ABC',
-            channels: ['C1234567890']
-          }
+            channels: ['C1234567890'],
+          },
         },
         handlers: {
           console: {
-            enabled: false
-          }
-        }
+            enabled: false,
+          },
+        },
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(disabledConfig, null, 2));
@@ -382,9 +384,9 @@ describe('Integration Tests - Basic Flow', () => {
           'test-team': {
             appToken: 'xapp-1-A1234567890',
             botToken: 'xoxb-1234567890-ABC',
-            channels: ['C1234567890']
-          }
-        }
+            channels: ['C1234567890'],
+          },
+        },
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(minimalConfig, null, 2));
@@ -409,25 +411,25 @@ describe('Integration Tests - Basic Flow', () => {
       // Create comprehensive test configuration
       const testConfig = {
         teams: {
-          'company': {
+          company: {
             appToken: 'xapp-1-A1234567890',
             botToken: 'xoxb-1234567890-ABC',
-            channels: ['C1111111111', 'C2222222222']
+            channels: ['C1111111111', 'C2222222222'],
           },
-          'client': {
+          client: {
             appToken: 'xapp-1-B1234567890',
             botToken: 'xoxb-0987654321-DEF',
-            channels: ['C3333333333']
-          }
+            channels: ['C3333333333'],
+          },
         },
         handlers: {
           console: {
-            enabled: true
+            enabled: true,
           },
           notification: {
-            enabled: false
-          }
-        }
+            enabled: false,
+          },
+        },
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));
@@ -464,7 +466,7 @@ describe('Integration Tests - Basic Flow', () => {
           user: 'alice',
           text: 'Good morning team!',
           timestamp: '1234567890.123456',
-          formattedTime: new Date('2023-01-01T09:00:00Z')
+          formattedTime: new Date('2023-01-01T09:00:00Z'),
         },
         {
           team: 'client',
@@ -473,7 +475,7 @@ describe('Integration Tests - Basic Flow', () => {
           user: 'bob',
           text: 'Project update: Phase 1 complete',
           timestamp: '1234567891.123456',
-          formattedTime: new Date('2023-01-01T09:00:01Z')
+          formattedTime: new Date('2023-01-01T09:00:01Z'),
         },
         {
           team: 'company',
@@ -482,8 +484,8 @@ describe('Integration Tests - Basic Flow', () => {
           user: 'charlie',
           text: 'Code review needed for PR #123',
           timestamp: '1234567892.123456',
-          formattedTime: new Date('2023-01-01T09:00:02Z')
-        }
+          formattedTime: new Date('2023-01-01T09:00:02Z'),
+        },
       ];
 
       // Process messages
@@ -493,9 +495,18 @@ describe('Integration Tests - Basic Flow', () => {
 
       // Verify output
       expect(consoleLogSpy).toHaveBeenCalledTimes(3);
-      expect(consoleLogSpy).toHaveBeenNthCalledWith(1, 'company/general/alice > Good morning team!');
-      expect(consoleLogSpy).toHaveBeenNthCalledWith(2, 'client/project/bob > Project update: Phase 1 complete');
-      expect(consoleLogSpy).toHaveBeenNthCalledWith(3, 'company/dev/charlie > Code review needed for PR #123');
+      expect(consoleLogSpy).toHaveBeenNthCalledWith(
+        1,
+        'company/general/alice > Good morning team!'
+      );
+      expect(consoleLogSpy).toHaveBeenNthCalledWith(
+        2,
+        'client/project/bob > Project update: Phase 1 complete'
+      );
+      expect(consoleLogSpy).toHaveBeenNthCalledWith(
+        3,
+        'company/dev/charlie > Code review needed for PR #123'
+      );
 
       // Step 5: Cleanup
       await teamManager.shutdown();

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleOutputHandler } from '../../../src/message/handlers/ConsoleOutputHandler.js';
 
 describe('ConsoleOutputHandler', () => {
@@ -35,11 +35,11 @@ describe('ConsoleOutputHandler', () => {
         user: 'testuser',
         text: 'Hello world',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await handler.handle(message);
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('test-team/general/testuser > Hello world');
     });
   });
@@ -50,7 +50,7 @@ describe('ConsoleOutputHandler', () => {
         team: 'mycompany',
         channel: 'general',
         user: 'john.doe',
-        text: 'Hello everyone!'
+        text: 'Hello everyone!',
       };
 
       const result = handler.formatForOutput(message);
@@ -62,7 +62,7 @@ describe('ConsoleOutputHandler', () => {
         team: 'my-company',
         channel: 'general-chat',
         user: 'john_doe',
-        text: 'Test message'
+        text: 'Test message',
       };
 
       const result = handler.formatForOutput(message);
@@ -152,12 +152,14 @@ describe('ConsoleOutputHandler', () => {
         user: 'testuser',
         text: 'Multi\nline\x00message\r\nwith\x01control\x02chars',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await handler.handle(message);
-      
-      expect(consoleSpy).toHaveBeenCalledWith('test-team/general/testuser > Multi linemessage withcontrolchars');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'test-team/general/testuser > Multi linemessage withcontrolchars'
+      );
     });
 
     it('should handle empty message text', async () => {
@@ -167,11 +169,11 @@ describe('ConsoleOutputHandler', () => {
         user: 'testuser',
         text: '',
         timestamp: '1234567890.123456',
-        formattedTime: new Date()
+        formattedTime: new Date(),
       };
 
       await handler.handle(message);
-      
+
       expect(consoleSpy).toHaveBeenCalledWith('test-team/general/testuser > ');
     });
   });

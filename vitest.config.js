@@ -7,12 +7,7 @@ export default defineConfig({
     include: ['test/**/*.test.js', 'src/**/*.test.js'],
     coverage: {
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'test/',
-        '**/*.test.js',
-        'src/main.js'
-      ]
-    }
-  }
+      exclude: ['node_modules/', 'test/', '**/*.test.js', 'src/main.js'],
+    },
+  },
 });

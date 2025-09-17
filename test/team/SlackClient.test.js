@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SlackClient } from '../../src/team/SlackClient.js';
 import { SocketModeClient } from '@slack/socket-mode';
 import { WebClient } from '@slack/web-api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SlackClient } from '../../src/team/SlackClient.js';
 
 // Mock the Slack SDK modules
 vi.mock('@slack/socket-mode', () => ({
-  SocketModeClient: vi.fn()
+  SocketModeClient: vi.fn(),
 }));
 
 vi.mock('@slack/web-api', () => ({
-  WebClient: vi.fn()
+  WebClient: vi.fn(),
 }));
 
 // Mock the logger
@@ -17,8 +17,8 @@ vi.mock('../../src/utils/Logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn()
-  }
+    error: vi.fn(),
+  },
 }));
 
 describe('SlackClient', () => {
@@ -38,16 +38,16 @@ describe('SlackClient', () => {
     mockSocketModeClient = {
       start: vi.fn().mockResolvedValue(undefined),
       disconnect: vi.fn().mockResolvedValue(undefined),
-      on: vi.fn()
+      on: vi.fn(),
     };
 
     mockWebClient = {
       conversations: {
-        info: vi.fn()
+        info: vi.fn(),
       },
       users: {
-        info: vi.fn()
-      }
+        info: vi.fn(),
+      },
     };
 
     // Mock the constructors
@@ -79,43 +79,51 @@ describe('SlackClient', () => {
     });
 
     it('should throw error for missing app token', () => {
-      expect(() => new SlackClient('', testBotToken, testTeamName, testChannelIds))
-        .toThrow('App token is required and must be a string');
+      expect(() => new SlackClient('', testBotToken, testTeamName, testChannelIds)).toThrow(
+        'App token is required and must be a string'
+      );
     });
 
     it('should throw error for invalid app token type', () => {
-      expect(() => new SlackClient(123, testBotToken, testTeamName, testChannelIds))
-        .toThrow('App token is required and must be a string');
+      expect(() => new SlackClient(123, testBotToken, testTeamName, testChannelIds)).toThrow(
+        'App token is required and must be a string'
+      );
     });
 
     it('should throw error for missing bot token', () => {
-      expect(() => new SlackClient(testAppToken, '', testTeamName, testChannelIds))
-        .toThrow('Bot token is required and must be a string');
+      expect(() => new SlackClient(testAppToken, '', testTeamName, testChannelIds)).toThrow(
+        'Bot token is required and must be a string'
+      );
     });
 
     it('should throw error for invalid bot token type', () => {
-      expect(() => new SlackClient(testAppToken, 123, testTeamName, testChannelIds))
-        .toThrow('Bot token is required and must be a string');
+      expect(() => new SlackClient(testAppToken, 123, testTeamName, testChannelIds)).toThrow(
+        'Bot token is required and must be a string'
+      );
     });
 
     it('should throw error for missing team name', () => {
-      expect(() => new SlackClient(testAppToken, testBotToken, '', testChannelIds))
-        .toThrow('Team name is required and must be a string');
+      expect(() => new SlackClient(testAppToken, testBotToken, '', testChannelIds)).toThrow(
+        'Team name is required and must be a string'
+      );
     });
 
     it('should throw error for invalid team name type', () => {
-      expect(() => new SlackClient(testAppToken, testBotToken, 123, testChannelIds))
-        .toThrow('Team name is required and must be a string');
+      expect(() => new SlackClient(testAppToken, testBotToken, 123, testChannelIds)).toThrow(
+        'Team name is required and must be a string'
+      );
     });
 
     it('should throw error for empty channel IDs', () => {
-      expect(() => new SlackClient(testAppToken, testBotToken, testTeamName, []))
-        .toThrow('Channel IDs must be a non-empty array');
+      expect(() => new SlackClient(testAppToken, testBotToken, testTeamName, [])).toThrow(
+        'Channel IDs must be a non-empty array'
+      );
     });
 
     it('should throw error for invalid channel IDs type', () => {
-      expect(() => new SlackClient(testAppToken, testBotToken, testTeamName, 'not-array'))
-        .toThrow('Channel IDs must be a non-empty array');
+      expect(() => new SlackClient(testAppToken, testBotToken, testTeamName, 'not-array')).toThrow(
+        'Channel IDs must be a non-empty array'
+      );
     });
   });
 
@@ -127,8 +135,9 @@ describe('SlackClient', () => {
     });
 
     it('should throw error for non-function callback', () => {
-      expect(() => slackClient.setMessageCallback('not-function'))
-        .toThrow('Message callback must be a function');
+      expect(() => slackClient.setMessageCallback('not-function')).toThrow(
+        'Message callback must be a function'
+      );
     });
   });
 
@@ -137,7 +146,7 @@ describe('SlackClient', () => {
       // Mock successful channel info responses
       mockWebClient.conversations.info.mockResolvedValue({
         ok: true,
-        channel: { name: 'general' }
+        channel: { name: 'general' },
       });
     });
 
@@ -212,9 +221,11 @@ describe('SlackClient', () => {
 
   describe('subscribeToChannels', () => {
     it('should subscribe to valid channels', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.webClient = mockWebClient;
-      
+
       mockWebClient.conversations.info
         .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } })
         .mockResolvedValueOnce({ ok: true, channel: { name: 'random' } });
@@ -227,9 +238,11 @@ describe('SlackClient', () => {
     });
 
     it('should skip invalid channels', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.webClient = mockWebClient;
-      
+
       mockWebClient.conversations.info
         .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } })
         .mockResolvedValueOnce({ ok: false });
@@ -241,9 +254,11 @@ describe('SlackClient', () => {
     });
 
     it('should handle channel access errors', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.webClient = mockWebClient;
-      
+
       mockWebClient.conversations.info
         .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } })
         .mockRejectedValueOnce(new Error('Access denied'));
@@ -254,27 +269,31 @@ describe('SlackClient', () => {
     });
 
     it('should throw error if no valid channels', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.webClient = mockWebClient;
-      
+
       mockWebClient.conversations.info.mockResolvedValue({ ok: false });
 
-      await expect(testClient.subscribeToChannels())
-        .rejects.toThrow('No valid channels available for subscription');
+      await expect(testClient.subscribeToChannels()).rejects.toThrow(
+        'No valid channels available for subscription'
+      );
     });
 
     it('should throw error if web client not initialized', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.webClient = null;
 
-      await expect(testClient.subscribeToChannels())
-        .rejects.toThrow('Web client not initialized');
+      await expect(testClient.subscribeToChannels()).rejects.toThrow('Web client not initialized');
     });
   });
 
   describe('handleMessage', () => {
     let testClient;
-    
+
     beforeEach(() => {
       testClient = new SlackClient(testAppToken, testBotToken, testTeamName, ['C1234567890']);
       testClient.webClient = mockWebClient;
@@ -287,7 +306,7 @@ describe('SlackClient', () => {
 
       mockWebClient.users.info.mockResolvedValue({
         ok: true,
-        user: { display_name: 'Test User' }
+        user: { display_name: 'Test User' },
       });
 
       const event = {
@@ -295,7 +314,7 @@ describe('SlackClient', () => {
         channel: 'C1234567890',
         user: 'U1234567890',
         text: 'Hello world',
-        ts: '1234567890.123456'
+        ts: '1234567890.123456',
       };
 
       await testClient.handleMessage(event);
@@ -307,7 +326,7 @@ describe('SlackClient', () => {
         user: 'Test User',
         text: 'Hello world',
         timestamp: '1234567890.123456',
-        formattedTime: expect.any(Date)
+        formattedTime: expect.any(Date),
       });
     });
 
@@ -320,7 +339,7 @@ describe('SlackClient', () => {
         channel: 'C9999999999',
         user: 'U1234567890',
         text: 'Hello world',
-        ts: '1234567890.123456'
+        ts: '1234567890.123456',
       };
 
       await testClient.handleMessage(event);
@@ -337,7 +356,7 @@ describe('SlackClient', () => {
         channel: 'C1234567890',
         bot_id: 'B1234567890',
         text: 'Bot message',
-        ts: '1234567890.123456'
+        ts: '1234567890.123456',
       };
 
       await testClient.handleMessage(event);
@@ -355,7 +374,7 @@ describe('SlackClient', () => {
         user: 'U1234567890',
         text: 'Message edited',
         subtype: 'message_changed',
-        ts: '1234567890.123456'
+        ts: '1234567890.123456',
       };
 
       await testClient.handleMessage(event);
@@ -374,7 +393,7 @@ describe('SlackClient', () => {
         channel: 'C1234567890',
         user: 'U1234567890',
         text: 'Hello world',
-        ts: '1234567890.123456'
+        ts: '1234567890.123456',
       };
 
       await testClient.handleMessage(event);
@@ -386,14 +405,16 @@ describe('SlackClient', () => {
         user: 'U1234567890',
         text: 'Hello world',
         timestamp: '1234567890.123456',
-        formattedTime: expect.any(Date)
+        formattedTime: expect.any(Date),
       });
     });
   });
 
   describe('reconnect', () => {
     it('should not reconnect if already connecting', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.isConnecting = true;
       const connectSpy = vi.spyOn(testClient, 'connect');
 
@@ -403,7 +424,9 @@ describe('SlackClient', () => {
     });
 
     it('should not reconnect if already connected', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.isConnected = true;
       const connectSpy = vi.spyOn(testClient, 'connect');
 
@@ -413,7 +436,9 @@ describe('SlackClient', () => {
     });
 
     it('should not reconnect if max attempts reached', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.reconnectAttempts = testClient.maxReconnectAttempts;
       const connectSpy = vi.spyOn(testClient, 'connect');
 
@@ -423,7 +448,9 @@ describe('SlackClient', () => {
     });
 
     it('should not reconnect if team is invalidated', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.isInvalidated = true;
       const connectSpy = vi.spyOn(testClient, 'connect');
 
@@ -433,7 +460,9 @@ describe('SlackClient', () => {
     });
 
     it('should increment reconnect attempts', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       const connectSpy = vi.spyOn(testClient, 'connect').mockResolvedValue();
 
       await testClient.reconnect();
@@ -445,7 +474,9 @@ describe('SlackClient', () => {
 
   describe('disconnect', () => {
     it('should disconnect successfully', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.socketModeClient = mockSocketModeClient;
       testClient.webClient = mockWebClient;
       testClient.isConnected = true;
@@ -460,11 +491,13 @@ describe('SlackClient', () => {
     });
 
     it('should handle disconnect error gracefully', async () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       testClient.socketModeClient = mockSocketModeClient;
       testClient.webClient = mockWebClient;
       testClient.isConnected = true;
-      
+
       mockSocketModeClient.disconnect.mockRejectedValue(new Error('Disconnect failed'));
 
       await testClient.disconnect();
@@ -476,29 +509,37 @@ describe('SlackClient', () => {
 
   describe('getter methods', () => {
     it('should return connection status', () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       expect(testClient.isClientConnected()).toBe(false);
-      
+
       testClient.isConnected = true;
       expect(testClient.isClientConnected()).toBe(true);
     });
 
     it('should return team name', () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       expect(testClient.getTeamName()).toBe(testTeamName);
     });
 
     it('should return channel IDs copy', () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       const channelIds = testClient.getChannelIds();
       expect(channelIds).toEqual(testChannelIds);
       expect(channelIds).not.toBe(testClient.channelIds); // Should be a copy
     });
 
     it('should return invalidation status', () => {
-      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+      const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+        ...testChannelIds,
+      ]);
       expect(testClient.isTeamInvalidated()).toBe(false);
-      
+
       testClient.isInvalidated = true;
       expect(testClient.isTeamInvalidated()).toBe(true);
     });
@@ -506,14 +547,14 @@ describe('SlackClient', () => {
 
   describe('event handling', () => {
     let testClient;
-    
+
     beforeEach(async () => {
       testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
       mockWebClient.conversations.info.mockResolvedValue({
         ok: true,
-        channel: { name: 'general' }
+        channel: { name: 'general' },
       });
-      
+
       await testClient.connect();
     });
 
@@ -526,8 +567,9 @@ describe('SlackClient', () => {
 
     it('should handle connected event', () => {
       // Get the connected event handler
-      const connectedHandler = mockSocketModeClient.on.mock.calls
-        .find(call => call[0] === 'connected')[1];
+      const connectedHandler = mockSocketModeClient.on.mock.calls.find(
+        (call) => call[0] === 'connected'
+      )[1];
 
       testClient.isConnected = false;
       testClient.reconnectAttempts = 3;
@@ -544,8 +586,9 @@ describe('SlackClient', () => {
       global.setTimeout = vi.fn();
 
       // Get the disconnected event handler
-      const disconnectedHandler = mockSocketModeClient.on.mock.calls
-        .find(call => call[0] === 'disconnected')[1];
+      const disconnectedHandler = mockSocketModeClient.on.mock.calls.find(
+        (call) => call[0] === 'disconnected'
+      )[1];
 
       testClient.isConnected = true;
       testClient.isConnecting = false;
@@ -565,8 +608,9 @@ describe('SlackClient', () => {
       global.setTimeout = vi.fn();
 
       // Get the error event handler
-      const errorHandler = mockSocketModeClient.on.mock.calls
-        .find(call => call[0] === 'error')[1];
+      const errorHandler = mockSocketModeClient.on.mock.calls.find(
+        (call) => call[0] === 'error'
+      )[1];
 
       testClient.isConnected = true;
       testClient.isConnecting = false;
@@ -600,12 +644,12 @@ describe('SlackClient', () => {
           new Error('token_expired'),
           new Error('unauthorized'),
           new Error('authentication failed'),
-          new Error('invalid credentials')
+          new Error('invalid credentials'),
         ];
 
-        authErrors.forEach(error => {
+        for (const error of authErrors) {
           expect(testClient._isAuthenticationError(error)).toBe(true);
-        });
+        }
       });
 
       it('should detect authentication errors by error code', () => {
@@ -634,12 +678,12 @@ describe('SlackClient', () => {
           new Error('Server error'),
           new Error('Rate limited'),
           null,
-          undefined
+          undefined,
         ];
 
-        nonAuthErrors.forEach(error => {
+        for (const error of nonAuthErrors) {
           expect(testClient._isAuthenticationError(error)).toBe(false);
-        });
+        }
       });
     });
 
@@ -667,10 +711,10 @@ describe('SlackClient', () => {
 
       it('should handle disconnect error during invalidation', () => {
         mockSocketModeClient.disconnect.mockRejectedValue(new Error('Disconnect failed'));
-        
+
         const authError = new Error('invalid_auth');
         expect(() => testClient._invalidateTeam(authError)).not.toThrow();
-        
+
         expect(testClient.isInvalidated).toBe(true);
       });
     });
@@ -715,14 +759,13 @@ describe('SlackClient', () => {
         testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
         mockWebClient.conversations.info.mockResolvedValue({
           ok: true,
-          channel: { name: 'general' }
+          channel: { name: 'general' },
         });
-        
+
         await testClient.connect();
-        
+
         // Get the error event handler
-        errorHandler = mockSocketModeClient.on.mock.calls
-          .find(call => call[0] === 'error')[1];
+        errorHandler = mockSocketModeClient.on.mock.calls.find((call) => call[0] === 'error')[1];
       });
 
       it('should invalidate team on socket authentication error', () => {
@@ -762,7 +805,9 @@ describe('SlackClient', () => {
         authError.code = 'token_revoked';
         mockSocketModeClient.start.mockRejectedValue(authError);
 
-        const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+        const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          ...testChannelIds,
+        ]);
 
         try {
           await testClient.connect();
@@ -783,7 +828,9 @@ describe('SlackClient', () => {
         const originalSetTimeout = global.setTimeout;
         global.setTimeout = vi.fn();
 
-        const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+        const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          ...testChannelIds,
+        ]);
 
         try {
           await testClient.connect();
@@ -801,7 +848,9 @@ describe('SlackClient', () => {
       });
 
       it('should handle authentication error during reconnection', async () => {
-        const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [...testChannelIds]);
+        const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          ...testChannelIds,
+        ]);
         testClient.reconnectAttempts = 1;
 
         const authError = new Error('account_inactive');
@@ -828,35 +877,31 @@ describe('SlackClient', () => {
       });
 
       it('should validate correct channel ID formats', () => {
-        const validChannelIds = [
-          'C1234567890',
-          'CABCDEFGHIJ',
-          'C0123456789'
-        ];
+        const validChannelIds = ['C1234567890', 'CABCDEFGHIJ', 'C0123456789'];
 
-        validChannelIds.forEach(channelId => {
+        for (const channelId of validChannelIds) {
           expect(testClient.isValidChannelIdFormat(channelId)).toBe(true);
-        });
+        }
       });
 
       it('should reject invalid channel ID formats', () => {
         const invalidChannelIds = [
-          'C123456789',     // too short
-          'C12345678901',   // too long
-          'D1234567890',    // wrong prefix
-          'c1234567890',    // lowercase
-          '1234567890',     // no prefix
-          '',               // empty
-          null,             // null
-          undefined,        // undefined
-          123,              // number
-          'C123456789a',    // lowercase letter
-          'C123456789-'     // special character
+          'C123456789', // too short
+          'C12345678901', // too long
+          'D1234567890', // wrong prefix
+          'c1234567890', // lowercase
+          '1234567890', // no prefix
+          '', // empty
+          null, // null
+          undefined, // undefined
+          123, // number
+          'C123456789a', // lowercase letter
+          'C123456789-', // special character
         ];
 
-        invalidChannelIds.forEach(channelId => {
+        for (const channelId of invalidChannelIds) {
           expect(testClient.isValidChannelIdFormat(channelId)).toBe(false);
-        });
+        }
       });
     });
 
@@ -873,13 +918,13 @@ describe('SlackClient', () => {
           { error: 'not_in_channel', expected: 'bot not in channel' },
           { error: 'access_denied', expected: 'access denied' },
           { error: 'invalid_channel', expected: 'invalid channel ID' },
-          { error: 'unknown_error', expected: 'API error: unknown_error' }
+          { error: 'unknown_error', expected: 'API error: unknown_error' },
         ];
 
-        apiErrors.forEach(({ error, expected }) => {
+        for (const { error, expected } of apiErrors) {
           const result = { ok: false, error };
           expect(testClient._getChannelErrorReason(result)).toBe(expected);
-        });
+        }
       });
 
       it('should detect exception error reasons correctly', () => {
@@ -893,14 +938,14 @@ describe('SlackClient', () => {
           { message: 'ECONNRESET', expected: 'network timeout' },
           { status: 403, message: 'Forbidden', expected: 'permission denied' },
           { status: 404, message: 'Not Found', expected: 'channel not found' },
-          { message: 'unknown error', expected: 'access error' }
+          { message: 'unknown error', expected: 'access error' },
         ];
 
-        exceptions.forEach(({ message, status, expected }) => {
+        for (const { message, status, expected } of exceptions) {
           const error = new Error(message);
           if (status) error.status = status;
           expect(testClient._getChannelErrorReasonFromException(error)).toBe(expected);
-        });
+        }
       });
     });
 
@@ -909,10 +954,10 @@ describe('SlackClient', () => {
 
       beforeEach(() => {
         testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
-          'C1234567890',  // valid
-          'invalid-id',   // invalid format
-          'C0987654321',  // valid but access denied
-          'C1111111111'   // valid but not found
+          'C1234567890', // valid
+          'invalid-id', // invalid format
+          'C0987654321', // valid but access denied
+          'C1111111111', // valid but not found
         ]);
         testClient.webClient = mockWebClient;
       });
@@ -929,12 +974,15 @@ describe('SlackClient', () => {
         expect(testClient.skippedChannels).toHaveLength(3);
         expect(testClient.skippedChannels[0]).toEqual({
           channelId: 'invalid-id',
-          reason: 'invalid channel ID format'
+          reason: 'invalid channel ID format',
         });
       });
 
       it('should skip channels with API errors', async () => {
-        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, ['C1234567890', 'C0987654321']);
+        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          'C1234567890',
+          'C0987654321',
+        ]);
         testClient.webClient = mockWebClient;
 
         mockWebClient.conversations.info
@@ -947,12 +995,15 @@ describe('SlackClient', () => {
         expect(testClient.skippedChannels).toHaveLength(1);
         expect(testClient.skippedChannels[0]).toEqual({
           channelId: 'C0987654321',
-          reason: 'bot not in channel'
+          reason: 'bot not in channel',
         });
       });
 
       it('should skip channels with exceptions', async () => {
-        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, ['C1234567890', 'C0987654321']);
+        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          'C1234567890',
+          'C0987654321',
+        ]);
         testClient.webClient = mockWebClient;
 
         const accessError = new Error('access_denied');
@@ -969,19 +1020,25 @@ describe('SlackClient', () => {
         expect(testClient.skippedChannels[0]).toEqual({
           channelId: 'C0987654321',
           reason: 'access denied',
-          error: 'access_denied'
+          error: 'access_denied',
         });
       });
 
       it('should throw error when no valid channels remain', async () => {
-        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, ['invalid-id', 'C0987654321']);
+        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          'invalid-id',
+          'C0987654321',
+        ]);
         testClient.webClient = mockWebClient;
 
-        mockWebClient.conversations.info
-          .mockResolvedValueOnce({ ok: false, error: 'channel_not_found' });
+        mockWebClient.conversations.info.mockResolvedValueOnce({
+          ok: false,
+          error: 'channel_not_found',
+        });
 
-        await expect(testClient.subscribeToChannels())
-          .rejects.toThrow('No valid channels available for subscription. Skipped 2 channels.');
+        await expect(testClient.subscribeToChannels()).rejects.toThrow(
+          'No valid channels available for subscription. Skipped 2 channels.'
+        );
 
         expect(testClient.skippedChannels).toHaveLength(2);
       });
@@ -990,11 +1047,16 @@ describe('SlackClient', () => {
         const { logger } = await import('../../src/utils/Logger.js');
         const mockLogger = vi.mocked(logger);
 
-        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, ['C1234567890', 'invalid-id']);
+        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          'C1234567890',
+          'invalid-id',
+        ]);
         testClient.webClient = mockWebClient;
 
-        mockWebClient.conversations.info
-          .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } });
+        mockWebClient.conversations.info.mockResolvedValueOnce({
+          ok: true,
+          channel: { name: 'general' },
+        });
 
         await testClient.subscribeToChannels();
 
@@ -1016,11 +1078,16 @@ describe('SlackClient', () => {
       });
 
       it('should track skipped channels after subscription', async () => {
-        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, ['C1234567890', 'invalid-id']);
+        testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
+          'C1234567890',
+          'invalid-id',
+        ]);
         testClient.webClient = mockWebClient;
 
-        mockWebClient.conversations.info
-          .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } });
+        mockWebClient.conversations.info.mockResolvedValueOnce({
+          ok: true,
+          channel: { name: 'general' },
+        });
 
         await testClient.subscribeToChannels();
 
@@ -1028,7 +1095,7 @@ describe('SlackClient', () => {
         expect(skippedChannels).toHaveLength(1);
         expect(skippedChannels[0]).toEqual({
           channelId: 'invalid-id',
-          reason: 'invalid channel ID format'
+          reason: 'invalid channel ID format',
         });
       });
 
@@ -1037,8 +1104,10 @@ describe('SlackClient', () => {
         testClient.webClient = mockWebClient;
         testClient.skippedChannels = [{ channelId: 'old-channel', reason: 'old reason' }];
 
-        mockWebClient.conversations.info
-          .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } });
+        mockWebClient.conversations.info.mockResolvedValueOnce({
+          ok: true,
+          channel: { name: 'general' },
+        });
 
         await testClient.subscribeToChannels();
 
@@ -1049,16 +1118,16 @@ describe('SlackClient', () => {
     describe('Channel Error Integration', () => {
       it('should handle mixed channel scenarios', async () => {
         const testClient = new SlackClient(testAppToken, testBotToken, testTeamName, [
-          'C1234567890',    // valid
+          'C1234567890', // valid
           'invalid-format', // invalid format
-          'C0987654321',    // access denied
-          'C1111111111',    // not found
-          'C2222222222'     // exception
+          'C0987654321', // access denied
+          'C1111111111', // not found
+          'C2222222222', // exception
         ]);
         testClient.webClient = mockWebClient;
 
         const networkError = new Error('Network timeout');
-        
+
         mockWebClient.conversations.info
           .mockResolvedValueOnce({ ok: true, channel: { name: 'general' } })
           .mockResolvedValueOnce({ ok: false, error: 'access_denied' })
@@ -1069,8 +1138,8 @@ describe('SlackClient', () => {
 
         expect(testClient.channelIds).toEqual(['C1234567890']);
         expect(testClient.skippedChannels).toHaveLength(4);
-        
-        const reasons = testClient.skippedChannels.map(s => s.reason);
+
+        const reasons = testClient.skippedChannels.map((s) => s.reason);
         expect(reasons).toContain('invalid channel ID format');
         expect(reasons).toContain('access denied');
         expect(reasons).toContain('channel not found');

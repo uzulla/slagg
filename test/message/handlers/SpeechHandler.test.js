@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { SpeechHandler } from '../../../src/message/handlers/SpeechHandler.js';
 
 describe('SpeechHandler', () => {
@@ -14,7 +14,7 @@ describe('SpeechHandler', () => {
       user: 'testuser',
       text: 'Hello world',
       timestamp: '1234567890.123456',
-      formattedTime: new Date('2023-01-01T12:00:00Z')
+      formattedTime: new Date('2023-01-01T12:00:00Z'),
     };
   });
 
@@ -48,7 +48,7 @@ describe('SpeechHandler', () => {
   describe('isEnabled', () => {
     it('should return current enabled state', () => {
       expect(handler.isEnabled()).toBe(false);
-      
+
       const enabledHandler = new SpeechHandler(true);
       expect(enabledHandler.isEnabled()).toBe(true);
     });
@@ -57,10 +57,10 @@ describe('SpeechHandler', () => {
   describe('setEnabled', () => {
     it('should update enabled state', () => {
       expect(handler.isEnabled()).toBe(false);
-      
+
       handler.setEnabled(true);
       expect(handler.isEnabled()).toBe(true);
-      
+
       handler.setEnabled(false);
       expect(handler.isEnabled()).toBe(false);
     });
@@ -69,10 +69,10 @@ describe('SpeechHandler', () => {
   describe('getCommand and setCommand', () => {
     it('should get and set speech command', () => {
       expect(handler.getCommand()).toBe('say');
-      
+
       handler.setCommand('espeak');
       expect(handler.getCommand()).toBe('espeak');
-      
+
       handler.setCommand('festival');
       expect(handler.getCommand()).toBe('festival');
     });
@@ -81,27 +81,27 @@ describe('SpeechHandler', () => {
   describe('handle', () => {
     it('should handle message when enabled', async () => {
       handler.setEnabled(true);
-      
+
       // Should not throw error when handling message
       await expect(handler.handle(mockMessage)).resolves.toBeUndefined();
     });
 
     it('should skip processing when disabled', async () => {
       handler.setEnabled(false);
-      
+
       // Should not throw error and should return early
       await expect(handler.handle(mockMessage)).resolves.toBeUndefined();
     });
 
     it('should handle message with various content types', async () => {
       handler.setEnabled(true);
-      
+
       const messages = [
         { ...mockMessage, text: '' },
         { ...mockMessage, text: 'Simple message' },
         { ...mockMessage, text: 'Message with\nnewlines' },
         { ...mockMessage, text: 'Message with URLs: https://example.com' },
-        { ...mockMessage, text: 'Message with @mentions and #channels' }
+        { ...mockMessage, text: 'Message with @mentions and #channels' },
       ];
 
       for (const message of messages) {
@@ -123,9 +123,9 @@ describe('SpeechHandler', () => {
     });
 
     it('should handle text with newlines', () => {
-      const messageWithNewlines = { 
-        ...mockMessage, 
-        text: 'Line 1\nLine 2\nLine 3' 
+      const messageWithNewlines = {
+        ...mockMessage,
+        text: 'Line 1\nLine 2\nLine 3',
       };
       const formatted = handler._formatForSpeech(messageWithNewlines);
       expect(formatted).toBe('Message from testuser in general: Line 1 Line 2 Line 3');
