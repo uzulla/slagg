@@ -25,7 +25,7 @@
     "realtime",
     "socket"
   ],
-  "author": "",
+  "author": "Junichi Ishida aka uzulla <zishida@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@slack/socket-mode": "^2.0.0",
