@@ -93,11 +93,13 @@ curl -H "Authorization: Bearer xoxb-your-bot-token" \
 {
   "teams": {
     "test-team-1": {
-      "token": "xapp-1-your-app-level-token-1",
+      "appToken": "xapp-1-your-app-level-token-1",
+      "botToken": "xoxb-your-bot-token-1",
       "channels": ["C1234567890", "C0987654321"]
     },
     "test-team-2": {
-      "token": "xapp-1-your-app-level-token-2", 
+      "appToken": "xapp-1-your-app-level-token-2",
+      "botToken": "xoxb-your-bot-token-2", 
       "channels": ["C1111111111"]
     }
   },
@@ -117,9 +119,10 @@ curl -H "Authorization: Bearer xoxb-your-bot-token" \
 ```
 
 **注意**: 
-- `token`にはApp-Level Token（xapp-1-で始まる）を使用
+- `appToken`にはApp-Level Token（xapp-1-で始まる）を使用
+- `botToken`にはBot User OAuth Token（xoxb-で始まる）を使用
 - `channels`には実際のチャンネルIDを設定
-- 複数チームをテストする場合は、各チームでアプリを作成してトークンを取得
+- 複数チームをテストする場合は、各チームでアプリを作成して両方のトークンを取得
 
 ## 4. アプリケーションのビルドと実行
 

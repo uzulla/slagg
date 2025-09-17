@@ -7,9 +7,12 @@ import { logger } from '../utils/Logger.js';
  * Manages real-time message streaming and auto-reconnection
  */
 export class SlackClient {
-  constructor(token, teamName, channelIds) {
-    if (!token || typeof token !== 'string') {
-      throw new Error('Token is required and must be a string');
+  constructor(appToken, botToken, teamName, channelIds) {
+    if (!appToken || typeof appToken !== 'string') {
+      throw new Error('App token is required and must be a string');
+    }
+    if (!botToken || typeof botToken !== 'string') {
+      throw new Error('Bot token is required and must be a string');
     }
     if (!teamName || typeof teamName !== 'string') {
       throw new Error('Team name is required and must be a string');
@@ -18,7 +21,8 @@ export class SlackClient {
       throw new Error('Channel IDs must be a non-empty array');
     }
 
-    this.token = token;
+    this.appToken = appToken;
+    this.botToken = botToken;
     this.teamName = teamName;
     this.channelIds = channelIds;
     this.socketModeClient = null;
@@ -59,8 +63,8 @@ export class SlackClient {
 
     try {
       // Initialize clients
-      this.socketModeClient = new SocketModeClient(this.token);
-      this.webClient = new WebClient(this.token);
+      this.socketModeClient = new SocketModeClient(this.appToken);
+      this.webClient = new WebClient(this.botToken);
 
       // Set up event listeners
       this._setupEventListeners();

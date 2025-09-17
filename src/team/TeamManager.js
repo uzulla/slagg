@@ -46,8 +46,26 @@ export class TeamManager {
 
     // Validate and store team configurations
     for (const [teamName, config] of Object.entries(teamsConfig)) {
-      if (!config.token || typeof config.token !== 'string') {
-        throw new Error(`Team ${teamName}: Token is required and must be a string`);
+      // Support both old format (single token) and new format (appToken + botToken)
+      let appToken, botToken;
+      
+      if (config.token) {
+        // Old format - single token (assume it's App-Level Token)
+        if (typeof config.token !== 'string') {
+          throw new Error(`Team ${teamName}: Token is required and must be a string`);
+        }
+        appToken = config.token;
+        botToken = null; // Will cause an error - user needs to update config
+      } else {
+        // New format
+        if (!config.appToken || typeof config.appToken !== 'string') {
+          throw new Error(`Team ${teamName}: appToken is required and must be a string`);
+        }
+        if (!config.botToken || typeof config.botToken !== 'string') {
+          throw new Error(`Team ${teamName}: botToken is required and must be a string`);
+        }
+        appToken = config.appToken;
+        botToken = config.botToken;
       }
 
       if (!Array.isArray(config.channels) || config.channels.length === 0) {
@@ -56,7 +74,8 @@ export class TeamManager {
 
       this.teams.set(teamName, {
         name: teamName,
-        token: config.token,
+        appToken: appToken,
+        botToken: botToken,
         channelIds: [...config.channels], // Create a copy
         client: null,
       });
@@ -237,8 +256,13 @@ export class TeamManager {
    */
   async _connectTeam(teamName, teamConfig) {
     try {
+      // Check if we have both tokens
+      if (!teamConfig.botToken) {
+        throw new Error(`Team ${teamName}: Both appToken and botToken are required. Please update your .env.json configuration.`);
+      }
+
       // Create SlackClient instance
-      const client = new SlackClient(teamConfig.token, teamName, teamConfig.channelIds);
+      const client = new SlackClient(teamConfig.appToken, teamConfig.botToken, teamName, teamConfig.channelIds);
 
       // Set up message callback if message processor is available
       if (this.messageProcessor) {
