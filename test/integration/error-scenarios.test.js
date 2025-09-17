@@ -33,7 +33,7 @@ describe('Integration Tests - Error Scenarios', () => {
     vi.spyOn(logger, 'warn').mockImplementation(consoleErrorSpy);
 
     // Setup test config path
-    testConfigPath = path.join(process.cwd(), '.env.json');
+    testConfigPath = path.join(process.cwd(), '.env.error-scenarios.test.json');
 
     // Clear all mocks
     vi.clearAllMocks();
@@ -92,7 +92,8 @@ describe('Integration Tests - Error Scenarios', () => {
         const testConfig = {
           teams: {
             'test-team': {
-              token: token,
+              appToken: token,
+              botToken: 'xoxb-1234567890-ABC',
               channels: ['C1234567890']
             }
           }
@@ -111,9 +112,6 @@ describe('Integration Tests - Error Scenarios', () => {
         
         // Clean up for next iteration
         vi.clearAllMocks();
-        if (fs.existsSync(testConfigPath)) {
-          fs.unlinkSync(testConfigPath);
-        }
       }
     });
 
@@ -121,15 +119,18 @@ describe('Integration Tests - Error Scenarios', () => {
       const mixedConfig = {
         teams: {
           'valid-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890']
           },
           'invalid-team': {
-            token: 'invalid-token',
+            appToken: 'invalid-token',
+            botToken: 'invalid-bot-token',
             channels: ['C0987654321']
           },
           'another-valid-team': {
-            token: 'xapp-1-B1234567890',
+            appToken: 'xapp-1-B1234567890',
+            botToken: 'xoxb-1111111111-GHI',
             channels: ['C1111111111']
           }
         }
@@ -165,31 +166,30 @@ describe('Integration Tests - Error Scenarios', () => {
     });
 
     it('should log appropriate error messages for invalid tokens', () => {
-      // Clean up any existing config file first
-      if (fs.existsSync(testConfigPath)) {
-        fs.unlinkSync(testConfigPath);
-      }
-
       const testConfig = {
         teams: {
           'test-team': {
-            token: 'invalid-token-format',
+            appToken: 'invalid-token-format',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890']
           }
         }
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));
+      
+      // Verify file was written
+      expect(fs.existsSync(testConfigPath)).toBe(true);
 
       const configManager = new ConfigurationManager();
       
       expect(() => {
         configManager.loadConfig();
-      }).toThrow('Failed to load configuration: Team "test-team" has invalid token format. Expected format: xapp-1-xxxxx');
+      }).toThrow('Failed to load configuration: Team "test-team" has invalid appToken format. Expected format: xapp-1-xxxxx');
 
       // Verify specific error message was logged
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Configuration error: Team "test-team" has invalid token format. Expected format: xapp-1-xxxxx'
+        'Configuration error: Team "test-team" has invalid appToken format. Expected format: xapp-1-xxxxx'
       );
     });
   });
@@ -198,7 +198,8 @@ describe('Integration Tests - Error Scenarios', () => {
     it('should handle Slack client connection failures', async () => {
       const testConfig = {
         'test-team': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1234567890']
         }
       };
@@ -231,7 +232,8 @@ describe('Integration Tests - Error Scenarios', () => {
     it('should attempt reconnection on connection loss', async () => {
       const testConfig = {
         'test-team': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1234567890']
         }
       };
@@ -279,11 +281,13 @@ describe('Integration Tests - Error Scenarios', () => {
     it('should handle partial team connection failures', async () => {
       const testConfig = {
         'working-team': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1234567890']
         },
         'failing-team': {
-          token: 'xapp-1-B1234567890',
+          appToken: 'xapp-1-B1234567890',
+          botToken: 'xoxb-0987654321-DEF',
           channels: ['C0987654321']
         }
       };
@@ -363,7 +367,8 @@ describe('Integration Tests - Error Scenarios', () => {
         const testConfig = {
           teams: {
             'test-team': {
-              token: 'xapp-1-A1234567890',
+              appToken: 'xapp-1-A1234567890',
+              botToken: 'xoxb-1234567890-ABC',
               channels: channels
             }
           }
@@ -389,7 +394,8 @@ describe('Integration Tests - Error Scenarios', () => {
       const testConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890', 'invalid-channel', 'C0987654321', 'D1111111111']
           }
         }
@@ -413,7 +419,8 @@ describe('Integration Tests - Error Scenarios', () => {
       const testConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['invalid-channel-id']
           }
         }
@@ -437,7 +444,8 @@ describe('Integration Tests - Error Scenarios', () => {
       const testConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: []
           }
         }
@@ -461,7 +469,8 @@ describe('Integration Tests - Error Scenarios', () => {
       const testConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890'
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC'
             // Missing channels property
           }
         }
@@ -567,7 +576,8 @@ describe('Integration Tests - Error Scenarios', () => {
     it('should handle team disconnection gracefully', async () => {
       const testConfig = {
         'test-team': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1234567890']
         }
       };
@@ -609,11 +619,13 @@ describe('Integration Tests - Error Scenarios', () => {
     it('should continue operating with remaining teams after one fails', async () => {
       const testConfig = {
         'working-team': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1234567890']
         },
         'failing-team': {
-          token: 'xapp-1-B1234567890',
+          appToken: 'xapp-1-B1234567890',
+          botToken: 'xoxb-0987654321-DEF',
           channels: ['C0987654321']
         }
       };
@@ -661,7 +673,8 @@ describe('Integration Tests - Error Scenarios', () => {
       const testConfig = {
         teams: {
           'invalid-team': {
-            token: 'invalid-token',
+            appToken: 'invalid-token',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890']
           }
         }
@@ -696,7 +709,8 @@ describe('Integration Tests - Error Scenarios', () => {
     it('should handle shutdown during connection attempts', async () => {
       const testConfig = {
         'test-team': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1234567890']
         }
       };

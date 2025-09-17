@@ -30,7 +30,7 @@ describe('Integration Tests - Basic Flow', () => {
     console.error = consoleErrorSpy;
 
     // Setup test config path
-    testConfigPath = path.join(process.cwd(), '.env.json');
+    testConfigPath = path.join(process.cwd(), '.env.basic-flow.test.json');
 
     // Clear all mocks
     vi.clearAllMocks();
@@ -56,7 +56,8 @@ describe('Integration Tests - Basic Flow', () => {
       const testConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890', 'C0987654321']
           }
         },
@@ -71,10 +72,12 @@ describe('Integration Tests - Basic Flow', () => {
 
       // Test configuration loading
       const configManager = new ConfigurationManager();
+      configManager.configPath = testConfigPath;
       const config = configManager.loadConfig();
 
       expect(config).toEqual(testConfig);
-      expect(config.teams['test-team'].token).toBe('xapp-1-A1234567890');
+      expect(config.teams['test-team'].appToken).toBe('xapp-1-A1234567890');
+      expect(config.teams['test-team'].botToken).toBe('xoxb-1234567890-ABC');
       expect(config.teams['test-team'].channels).toHaveLength(2);
 
       // Test team configuration extraction
@@ -169,15 +172,18 @@ describe('Integration Tests - Basic Flow', () => {
       const testConfig = {
         teams: {
           'company-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1111111111', 'C2222222222']
           },
           'client-team': {
-            token: 'xapp-1-B1234567890',
+            appToken: 'xapp-1-B1234567890',
+            botToken: 'xoxb-0987654321-DEF',
             channels: ['C3333333333']
           },
           'opensource-team': {
-            token: 'xapp-1-C1234567890',
+            appToken: 'xapp-1-C1234567890',
+            botToken: 'xoxb-1111111111-GHI',
             channels: ['C4444444444', 'C5555555555', 'C6666666666']
           }
         },
@@ -189,6 +195,7 @@ describe('Integration Tests - Basic Flow', () => {
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));
 
       const configManager = new ConfigurationManager();
+      configManager.configPath = testConfigPath;
       const config = configManager.loadConfig();
       const teamConfigs = configManager.getValidTeamConfigs();
 
@@ -214,11 +221,13 @@ describe('Integration Tests - Basic Flow', () => {
     it('should create team manager with multiple teams', async () => {
       const testConfig = {
         'team1': {
-          token: 'xapp-1-A1234567890',
+          appToken: 'xapp-1-A1234567890',
+          botToken: 'xoxb-1234567890-ABC',
           channels: ['C1111111111']
         },
         'team2': {
-          token: 'xapp-1-B1234567890',
+          appToken: 'xapp-1-B1234567890',
+          botToken: 'xoxb-0987654321-DEF',
           channels: ['C2222222222']
         }
       };
@@ -339,7 +348,8 @@ describe('Integration Tests - Basic Flow', () => {
       const disabledConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890']
           }
         },
@@ -353,6 +363,7 @@ describe('Integration Tests - Basic Flow', () => {
       fs.writeFileSync(testConfigPath, JSON.stringify(disabledConfig, null, 2));
 
       const configManager = new ConfigurationManager();
+      configManager.configPath = testConfigPath;
       const config = configManager.loadConfig();
       const messageProcessor = new MessageProcessor();
 
@@ -369,7 +380,8 @@ describe('Integration Tests - Basic Flow', () => {
       const minimalConfig = {
         teams: {
           'test-team': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1234567890']
           }
         }
@@ -378,6 +390,7 @@ describe('Integration Tests - Basic Flow', () => {
       fs.writeFileSync(testConfigPath, JSON.stringify(minimalConfig, null, 2));
 
       const configManager = new ConfigurationManager();
+      configManager.configPath = testConfigPath;
       const config = configManager.loadConfig();
       const messageProcessor = new MessageProcessor();
 
@@ -397,11 +410,13 @@ describe('Integration Tests - Basic Flow', () => {
       const testConfig = {
         teams: {
           'company': {
-            token: 'xapp-1-A1234567890',
+            appToken: 'xapp-1-A1234567890',
+            botToken: 'xoxb-1234567890-ABC',
             channels: ['C1111111111', 'C2222222222']
           },
           'client': {
-            token: 'xapp-1-B1234567890',
+            appToken: 'xapp-1-B1234567890',
+            botToken: 'xoxb-0987654321-DEF',
             channels: ['C3333333333']
           }
         },
@@ -419,6 +434,7 @@ describe('Integration Tests - Basic Flow', () => {
 
       // Step 1: Load configuration
       const configManager = new ConfigurationManager();
+      configManager.configPath = testConfigPath;
       const config = configManager.loadConfig();
       const teamConfigs = configManager.getValidTeamConfigs();
 

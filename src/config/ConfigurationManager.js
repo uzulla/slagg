@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { logger } from '../utils/Logger.js';
 
 /**
@@ -83,48 +82,31 @@ export class ConfigurationManager {
       throw new Error(errorMessage);
     }
 
-    // Support both old format (single token) and new format (appToken + botToken)
-    if (teamConfig.token) {
-      // Old format - single token (assume it's App-Level Token)
-      if (typeof teamConfig.token !== 'string') {
-        const errorMessage = `Team "${teamName}" must have a valid token string`;
-        logger.error(`Configuration error: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
+    // Validate appToken and botToken (new format only)
+    if (!teamConfig.appToken || typeof teamConfig.appToken !== 'string') {
+      const errorMessage = `Team "${teamName}" must have a valid appToken string`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
 
-      // Validate token format (Slack App-Level Token format)
-      if (!this.isValidSlackAppToken(teamConfig.token)) {
-        const errorMessage = `Team "${teamName}" has invalid token format. Expected format: xapp-1-xxxxx`;
-        logger.error(`Configuration error: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
-    } else {
-      // New format - separate appToken and botToken
-      if (!teamConfig.appToken || typeof teamConfig.appToken !== 'string') {
-        const errorMessage = `Team "${teamName}" must have a valid appToken string`;
-        logger.error(`Configuration error: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
+    if (!teamConfig.botToken || typeof teamConfig.botToken !== 'string') {
+      const errorMessage = `Team "${teamName}" must have a valid botToken string`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
 
-      if (!teamConfig.botToken || typeof teamConfig.botToken !== 'string') {
-        const errorMessage = `Team "${teamName}" must have a valid botToken string`;
-        logger.error(`Configuration error: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
+    // Validate App-Level Token format
+    if (!this.isValidSlackAppToken(teamConfig.appToken)) {
+      const errorMessage = `Team "${teamName}" has invalid appToken format. Expected format: xapp-1-xxxxx`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
 
-      // Validate App-Level Token format
-      if (!this.isValidSlackAppToken(teamConfig.appToken)) {
-        const errorMessage = `Team "${teamName}" has invalid appToken format. Expected format: xapp-1-xxxxx`;
-        logger.error(`Configuration error: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
-
-      // Validate Bot Token format
-      if (!this.isValidSlackBotToken(teamConfig.botToken)) {
-        const errorMessage = `Team "${teamName}" has invalid botToken format. Expected format: xoxb-xxxxx`;
-        logger.error(`Configuration error: ${errorMessage}`);
-        throw new Error(errorMessage);
-      }
+    // Validate Bot Token format
+    if (!this.isValidSlackBotToken(teamConfig.botToken)) {
+      const errorMessage = `Team "${teamName}" has invalid botToken format. Expected format: xoxb-xxxxx`;
+      logger.error(`Configuration error: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
 
     // Validate channels
@@ -238,24 +220,14 @@ export class ConfigurationManager {
       throw new Error(`Team "${teamName}" not found in configuration`);
     }
 
-    // Support both old format (single token) and new format (appToken + botToken)
-    if (teamConfig.token) {
-      // Old format - assume single token is App-Level Token
-      return {
-        appToken: teamConfig.token,
-        botToken: null // Will need to be provided separately
-      };
-    } else {
-      // New format
-      return {
-        appToken: teamConfig.appToken,
-        botToken: teamConfig.botToken
-      };
-    }
+    return {
+      appToken: teamConfig.appToken,
+      botToken: teamConfig.botToken,
+    };
   }
 
   /**
-   * Get token for a specific team (backward compatibility)
+   * Get app token for a specific team
    * @param {string} teamName - Name of the team
    * @returns {string} App-Level token for the team
    * @throws {Error} If team is not found or configuration is not loaded
@@ -325,5 +297,18 @@ export class ConfigurationManager {
       // Error already logged in loadConfig()
       return null;
     }
+  }
+
+  /**
+   * Validate Slack App-Level token format
+   * @param {string} token - Token to validate
+   * @returns {boolean} True if token format is valid
+   */
+  isValidSlackToken(token) {
+    if (!token || typeof token !== 'string') {
+      return false;
+    }
+    // Slack App-Level token format: xapp-1- followed by alphanumeric characters
+    return /^xapp-1-[A-Za-z0-9]+$/.test(token);
   }
 }

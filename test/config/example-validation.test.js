@@ -23,15 +23,18 @@ describe('Example Configuration Validation', () => {
     const exampleConfig = {
       "teams": {
         "mycompany": {
-          "token": "xapp-1-A123456789012345678901234567890123456789",
+          "appToken": "xapp-1-A123456789012345678901234567890123456789",
+          "botToken": "xoxb-test-123456789012-1234567890123-mocktoken1234567",
           "channels": ["C1234567890", "C0987654321"]
         },
         "clientteam": {
-          "token": "xapp-1-B987654321098765432109876543210987654321",
+          "appToken": "xapp-1-B987654321098765432109876543210987654321",
+          "botToken": "xoxb-test-987654321098-0987654321098-mocktoken7654321",
           "channels": ["C1111111111"]
         },
         "opensource": {
-          "token": "xapp-1-C555666777888999000111222333444555666777",
+          "appToken": "xapp-1-C555666777888999000111222333444555666777",
+          "botToken": "xoxb-test-555666777888-5556667778889-mocktoken5556667",
           "channels": ["C2222222222", "C3333333333"]
         }
       },
@@ -68,6 +71,11 @@ describe('Example Configuration Validation', () => {
     expect(configManager.getTeamToken('clientteam')).toBe('xapp-1-B987654321098765432109876543210987654321');
     expect(configManager.getTeamToken('opensource')).toBe('xapp-1-C555666777888999000111222333444555666777');
 
+    // Verify new token format methods
+    const mycompanyTokens = configManager.getTeamTokens('mycompany');
+    expect(mycompanyTokens.appToken).toBe('xapp-1-A123456789012345678901234567890123456789');
+    expect(mycompanyTokens.botToken).toBe('xoxb-test-123456789012-1234567890123-mocktoken1234567');
+
     // Verify handler configurations
     const handlerConfigs = configManager.getHandlerConfigs();
     expect(handlerConfigs.console.enabled).toBe(true);
@@ -77,14 +85,25 @@ describe('Example Configuration Validation', () => {
   });
 
   it('should validate all token formats in example', () => {
-    const tokens = [
+    const appTokens = [
       'xapp-1-A123456789012345678901234567890123456789',
       'xapp-1-B987654321098765432109876543210987654321',
       'xapp-1-C555666777888999000111222333444555666777'
     ];
 
-    for (const token of tokens) {
+    const botTokens = [
+      'xoxb-test-123456789012-1234567890123-mocktoken1234567',
+      'xoxb-test-987654321098-0987654321098-mocktoken7654321',
+      'xoxb-test-555666777888-5556667778889-mocktoken5556667'
+    ];
+
+    for (const token of appTokens) {
+      expect(configManager.isValidSlackAppToken(token)).toBe(true);
       expect(configManager.isValidSlackToken(token)).toBe(true);
+    }
+
+    for (const token of botTokens) {
+      expect(configManager.isValidSlackBotToken(token)).toBe(true);
     }
   });
 
