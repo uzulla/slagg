@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleOutputHandler } from '../../../src/message/handlers/ConsoleOutputHandler.js';
+import chalk from 'chalk';
 
 describe('ConsoleOutputHandler', () => {
   let handler;
@@ -144,6 +145,178 @@ describe('ConsoleOutputHandler', () => {
     });
   });
 
+  describe('highlight functionality', () => {
+    let mockHighlightConfig;
+
+    beforeEach(() => {
+      mockHighlightConfig = {
+        matchesAny: vi.fn()
+      };
+    });
+
+    describe('applyHighlight', () => {
+      it('should return original message when no highlight config is provided', () => {
+        const handler = new ConsoleOutputHandler(true, null);
+        const formattedMessage = 'test-team/general/testuser > Hello world';
+        const originalText = 'Hello world';
+
+        const result = handler.applyHighlight(formattedMessage, originalText);
+
+        expect(result).toBe(formattedMessage);
+      });
+
+      it('should return original message when original text is empty', () => {
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const formattedMessage = 'test-team/general/testuser > ';
+        const originalText = '';
+
+        const result = handler.applyHighlight(formattedMessage, originalText);
+
+        expect(result).toBe(formattedMessage);
+        expect(mockHighlightConfig.matchesAny).not.toHaveBeenCalled();
+      });
+
+      it('should return original message when original text is null', () => {
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const formattedMessage = 'test-team/general/testuser > Hello world';
+        const originalText = null;
+
+        const result = handler.applyHighlight(formattedMessage, originalText);
+
+        expect(result).toBe(formattedMessage);
+        expect(mockHighlightConfig.matchesAny).not.toHaveBeenCalled();
+      });
+
+      it('should return highlighted message when keyword matches', () => {
+        mockHighlightConfig.matchesAny.mockReturnValue(true);
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const formattedMessage = 'test-team/general/testuser > Hello php world';
+        const originalText = 'Hello php world';
+
+        const result = handler.applyHighlight(formattedMessage, originalText);
+
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith(originalText);
+        expect(result).toBe(chalk.red.bold(formattedMessage));
+      });
+
+      it('should return original message when no keywords match', () => {
+        mockHighlightConfig.matchesAny.mockReturnValue(false);
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const formattedMessage = 'test-team/general/testuser > Hello world';
+        const originalText = 'Hello world';
+
+        const result = handler.applyHighlight(formattedMessage, originalText);
+
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith(originalText);
+        expect(result).toBe(formattedMessage);
+      });
+
+      it('should return original message when highlight config throws error', () => {
+        mockHighlightConfig.matchesAny.mockImplementation(() => {
+          throw new Error('Regex error');
+        });
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const formattedMessage = 'test-team/general/testuser > Hello world';
+        const originalText = 'Hello world';
+
+        const result = handler.applyHighlight(formattedMessage, originalText);
+
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith(originalText);
+        expect(result).toBe(formattedMessage);
+      });
+    });
+
+    describe('formatForOutput with highlight', () => {
+      it('should apply highlight when keywords match in message text', () => {
+        mockHighlightConfig.matchesAny.mockReturnValue(true);
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const message = {
+          team: 'mycompany',
+          channel: 'general',
+          user: 'john.doe',
+          text: 'Hello php world!',
+        };
+
+        const result = handler.formatForOutput(message);
+        const expectedFormatted = 'mycompany/general/john.doe > Hello php world!';
+
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith('Hello php world!');
+        expect(result).toBe(chalk.red.bold(expectedFormatted));
+      });
+
+      it('should not apply highlight when no keywords match', () => {
+        mockHighlightConfig.matchesAny.mockReturnValue(false);
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const message = {
+          team: 'mycompany',
+          channel: 'general',
+          user: 'john.doe',
+          text: 'Hello world!',
+        };
+
+        const result = handler.formatForOutput(message);
+        const expectedFormatted = 'mycompany/general/john.doe > Hello world!';
+
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith('Hello world!');
+        expect(result).toBe(expectedFormatted);
+      });
+
+      it('should handle highlight with multiline text correctly', () => {
+        mockHighlightConfig.matchesAny.mockReturnValue(true);
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const message = {
+          team: 'mycompany',
+          channel: 'general',
+          user: 'john.doe',
+          text: 'Hello\nphp\nworld!',
+        };
+
+        const result = handler.formatForOutput(message);
+        const expectedFormatted = 'mycompany/general/john.doe > Hello php world!';
+
+        // matchesAny should be called with original text, not processed text
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith('Hello\nphp\nworld!');
+        expect(result).toBe(chalk.red.bold(expectedFormatted));
+      });
+
+      it('should fallback to normal output when highlight throws error', () => {
+        mockHighlightConfig.matchesAny.mockImplementation(() => {
+          throw new Error('Regex compilation error');
+        });
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        const message = {
+          team: 'mycompany',
+          channel: 'general',
+          user: 'john.doe',
+          text: 'Hello world!',
+        };
+
+        const result = handler.formatForOutput(message);
+        const expectedFormatted = 'mycompany/general/john.doe > Hello world!';
+
+        expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith('Hello world!');
+        expect(result).toBe(expectedFormatted);
+      });
+    });
+
+    describe('constructor with highlight config', () => {
+      it('should accept highlight config in constructor', () => {
+        const handler = new ConsoleOutputHandler(true, mockHighlightConfig);
+        expect(handler.highlightConfig).toBe(mockHighlightConfig);
+      });
+
+      it('should work without highlight config', () => {
+        const handler = new ConsoleOutputHandler(true);
+        expect(handler.highlightConfig).toBe(null);
+      });
+
+      it('should work with highlight config set to null', () => {
+        const handler = new ConsoleOutputHandler(true, null);
+        expect(handler.highlightConfig).toBe(null);
+      });
+    });
+  });
+
   describe('integration tests', () => {
     it('should handle message with newlines and control characters', async () => {
       const message = {
@@ -175,6 +348,31 @@ describe('ConsoleOutputHandler', () => {
       await handler.handle(message);
 
       expect(consoleSpy).toHaveBeenCalledWith('test-team/general/testuser > ');
+    });
+
+    it('should handle message with highlight integration', async () => {
+      const mockHighlightConfig = {
+        matchesAny: vi.fn().mockReturnValue(true)
+      };
+      const highlightHandler = new ConsoleOutputHandler(true, mockHighlightConfig);
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      const message = {
+        team: 'test-team',
+        channel: 'general',
+        user: 'testuser',
+        text: 'Hello php world',
+        timestamp: '1234567890.123456',
+        formattedTime: new Date(),
+      };
+
+      await highlightHandler.handle(message);
+
+      const expectedFormatted = 'test-team/general/testuser > Hello php world';
+      expect(consoleSpy).toHaveBeenCalledWith(chalk.red.bold(expectedFormatted));
+      expect(mockHighlightConfig.matchesAny).toHaveBeenCalledWith('Hello php world');
+
+      consoleSpy.mockRestore();
     });
   });
 });
