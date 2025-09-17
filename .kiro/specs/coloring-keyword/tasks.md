@@ -27,7 +27,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 2.1, 2.2, 3.1_
 
-- [-] 4. メインアプリケーションの統合
+- [x] 4. メインアプリケーションの統合
   - `SlaggApp`クラスでHighlightConfig初期化を追加
   - `setupMessageHandlers`メソッドでConsoleOutputHandlerにハイライト設定を渡す処理を実装
   - ハイライト設定読み込み時のエラーハンドリングを追加
@@ -35,7 +35,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 1.1, 2.1, 3.1_
 
-- [ ] 5. HighlightConfigクラスの単体テスト作成
+- [x] 5. HighlightConfigクラスの単体テスト作成
   - `test/config/HighlightConfig.test.js`ファイルを作成
   - 正規表現パース機能のテストケースを作成
   - キーワードマッチング機能のテストケースを作成
@@ -44,7 +44,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 1.4, 2.5, 3.2_
 
-- [ ] 6. ConfigurationManager拡張部分の単体テスト作成
+- [x] 6. ConfigurationManager拡張部分の単体テスト作成
   - `test/config/ConfigurationManager.test.js`にhighlight関連テストを追加
   - highlight設定読み込み機能のテストケースを作成
   - 設定検証機能のテストケースを作成
@@ -53,7 +53,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 1.4, 2.5_
 
-- [ ] 7. ConsoleOutputHandler拡張部分の単体テスト作成
+- [x] 7. ConsoleOutputHandler拡張部分の単体テスト作成
   - `test/message/handlers/ConsoleOutputHandler.test.js`にハイライト関連テストを追加
   - ハイライト適用処理のテストケースを作成
   - マッチしない場合の通常出力テストケースを作成
@@ -62,7 +62,7 @@
   - 適切なコミットメッセージでコミット
   - _要件: 2.2, 3.2_
 
-- [ ] 8. 統合テストの作成
+- [x] 8. 統合テストの作成
   - `test/integration/highlight-feature.test.js`ファイルを作成
   - 設定ファイル読み込みからハイライト出力までの統合テストを作成
   - 複数キーワードマッチングのテストケースを作成
