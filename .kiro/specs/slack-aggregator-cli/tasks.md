@@ -6,7 +6,7 @@
 - 機能が動作する状態でコミットする
 - コミットメッセージは「feat: ConfigurationManagerクラスの実装」のような形式を推奨
 
-- [ ] 1. プロジェクト基盤の構築
+- [x] 1. プロジェクト基盤の構築
   - package.jsonの作成とES Modules設定
   - Biome設定ファイルの作成
   - Vitestテスト環境の設定
