@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { MessageHandler } from '../MessageHandler.js';
 
 /**
@@ -5,9 +6,10 @@ import { MessageHandler } from '../MessageHandler.js';
  * Formats messages as: {team}/{channel}/{user} > message
  */
 export class ConsoleOutputHandler extends MessageHandler {
-  constructor(enabled = true) {
+  constructor(enabled = true, highlightConfig = null) {
     super();
     this.enabled = enabled;
+    this.highlightConfig = highlightConfig;
   }
 
   /**
@@ -43,7 +45,32 @@ export class ConsoleOutputHandler extends MessageHandler {
   formatForOutput(message) {
     const sanitizedText = this.sanitizeText(message.text);
     const textWithoutNewlines = this.replaceNewlines(sanitizedText);
-    return `${message.team}/${message.channel}/${message.user} > ${textWithoutNewlines}`;
+    const formattedMessage = `${message.team}/${message.channel}/${message.user} > ${textWithoutNewlines}`;
+
+    return this.applyHighlight(formattedMessage, message.text);
+  }
+
+  /**
+   * Apply highlight to formatted message if keywords match
+   * @param {string} formattedMessage - The formatted message string
+   * @param {string} originalText - The original message text for matching
+   * @returns {string} Highlighted or original formatted message
+   */
+  applyHighlight(formattedMessage, originalText) {
+    if (!this.highlightConfig || !originalText) {
+      return formattedMessage;
+    }
+
+    try {
+      if (this.highlightConfig.matchesAny(originalText)) {
+        return chalk.red.bold(formattedMessage);
+      }
+    } catch (error) {
+      // ハイライト処理でエラーが発生した場合は通常の表示でメッセージを出力
+      return formattedMessage;
+    }
+
+    return formattedMessage;
   }
 
   /**
