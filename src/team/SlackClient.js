@@ -232,7 +232,7 @@ export class SlackClient {
               userResult.user.name ||
               'Unknown User';
           }
-        } catch (error) {
+        } catch (_error) {
           // If we can't get user info, use the user ID
           userName = messageEvent.user;
         }
@@ -282,7 +282,7 @@ export class SlackClient {
 
     try {
       await this.connect();
-    } catch (error) {
+    } catch (_error) {
       // connect() method already handles scheduling the next reconnect
       // or invalidates the team for auth errors
     }
@@ -473,7 +473,7 @@ export class SlackClient {
         this.socketModeClient.disconnect().catch(() => {
           // Ignore disconnect errors during invalidation
         });
-      } catch (disconnectError) {
+      } catch (_disconnectError) {
         // Ignore disconnect errors during invalidation
       }
     }

@@ -50,8 +50,14 @@ describe('TeamManager', () => {
     };
 
     // Mock SlackClient constructor
+    // Vitest v4 では new 対象モックは constructor 呼び出しを意識して定義する
     const { SlackClient } = await import('../../src/team/SlackClient.js');
-    SlackClient.mockImplementation(() => mockSlackClient);
+    SlackClient.mockImplementation(function mockSlackClientConstructor() {
+      this.setMessageCallback = mockSlackClient.setMessageCallback;
+      this.connect = mockSlackClient.connect;
+      this.disconnect = mockSlackClient.disconnect;
+      this.isClientConnected = mockSlackClient.isClientConnected;
+    });
 
     teamManager = new TeamManager();
   });

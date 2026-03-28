@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { ConfigurationManager } from './config/ConfigurationManager.js';
-import { MessageProcessor } from './message/MessageProcessor.js';
 import { ConsoleOutputHandler } from './message/handlers/ConsoleOutputHandler.js';
+import { MessageProcessor } from './message/MessageProcessor.js';
 import { TeamManager } from './team/TeamManager.js';
 import { logger } from './utils/Logger.js';
 

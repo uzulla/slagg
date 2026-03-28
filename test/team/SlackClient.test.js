@@ -51,11 +51,12 @@ describe('SlackClient', () => {
     };
 
     // Mock the constructors
-    SocketModeClient.mockImplementation((options) => {
+    // vitest v4 ではクラスのモックに function キーワードが必要
+    SocketModeClient.mockImplementation(function (options) {
       expect(options).toHaveProperty('appToken');
       return mockSocketModeClient;
     });
-    WebClient.mockImplementation((token) => {
+    WebClient.mockImplementation(function (token) {
       expect(typeof token).toBe('string');
       return mockWebClient;
     });

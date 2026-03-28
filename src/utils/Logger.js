@@ -34,7 +34,6 @@ export class Logger {
    * @param {string} message - The message to log
    */
   _writeLog(level, message) {
-    const timestamp = new Date().toISOString();
     const logMessage = `[${level}] ${message}`;
     process.stderr.write(`${logMessage}\n`);
   }

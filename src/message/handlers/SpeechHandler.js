@@ -75,10 +75,10 @@ export class SpeechHandler extends MessageHandler {
   /**
    * Private method to speak a message (placeholder)
    * This method can be extended in the future to implement actual speech synthesis
-   * @param {Object} message - The message object
+   * @param {Object} _message - The message object
    * @private
    */
-  async _speakMessage(message) {
+  async _speakMessage(_message) {
     // Placeholder implementation
     // Future implementations could:
     // - Format the message for speech output

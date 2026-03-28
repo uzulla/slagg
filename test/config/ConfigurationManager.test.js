@@ -311,6 +311,7 @@ describe('ConfigurationManager', () => {
       it('should return true for valid Slack App-Level token', () => {
         expect(configManager.isValidSlackToken('xapp-1-A123456789')).toBe(true);
         expect(configManager.isValidSlackToken('xapp-1-ABC123XYZ789')).toBe(true);
+        expect(configManager.isValidSlackToken('xapp-1-A123-B456-C789')).toBe(true);
       });
 
       it('should return false for invalid token formats', () => {
